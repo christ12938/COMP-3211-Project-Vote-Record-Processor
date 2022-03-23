@@ -1,0 +1,23 @@
+DEPENDS ON THE SIZE OF AN INSTRUCTION
+
+AT Most 16 REGISTERS
+AT LEAST 25 bits of DM
+
+SWAP(B1, B2, P1, P2, S)
+3 bits, 2 bits, 2 bits, 3 bits, 3 bits, 3 bits
+
+RS(R)
+3 bits, 3 bits (Zero Extend)
+
+XOR (NULL)
+3 bits
+
+CMP 
+
+LW
+
+SW
+
+ADD
+
+23 bits * n (Ask tutor/lecturer)
