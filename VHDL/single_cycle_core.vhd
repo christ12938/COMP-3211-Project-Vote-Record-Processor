@@ -49,7 +49,10 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 entity single_cycle_core is
     port ( reset  : in  std_logic;
-           clk    : in  std_logic );
+           clk    : in  std_logic;
+           control_word    : in  std_logic_vector(24 downto 0);
+           start_signal    : in  std_logic;
+           vote_record     : in  std_logic_vector(31 downto 0));
 end single_cycle_core;
 
 architecture structural of single_cycle_core is
@@ -68,7 +71,7 @@ component instruction_memory is
            insn_out : out std_logic_vector(15 downto 0) );
 end component;
 
-component sign_extend_4to16 is
+component sign_extend_4to32 is
     port ( data_in  : in  std_logic_vector(3 downto 0);
            data_out : out std_logic_vector(31 downto 0) );
 end component;
@@ -80,7 +83,7 @@ component mux_2to1_4b is
            data_out   : out std_logic_vector(3 downto 0) );
 end component;
 
-component mux_2to1_16b is
+component mux_2to1_32b is
     port ( mux_select : in  std_logic;
            data_a     : in  std_logic_vector(31 downto 0);
            data_b     : in  std_logic_vector(31 downto 0);
@@ -94,13 +97,15 @@ component control_unit is
            alu_src    : out std_logic;
            mem_write  : out std_logic;
            mem_to_reg : out std_logic;
-           ldsr_ctrl  : out std_logic;
-           lrb_ctrl   : out std_logic);
+           ex_reg     : out std_logic_vector(1 downto 0));
 end component;
 
 component register_file is
     port ( reset           : in  std_logic;
            clk             : in  std_logic;
+           control_word    : in  std_logic_vector(24 downto 0);
+           start_signal    : in  std_logic;
+           vote_record     : in  std_logic_vector(31 downto 0);
            read_register_a : in  std_logic_vector(3 downto 0);
            read_register_b : in  std_logic_vector(3 downto 0);
            write_enable    : in  std_logic;
@@ -117,7 +122,7 @@ component adder_4b is
            carry_out : out std_logic );
 end component;
 
-component adder_16b is
+component adder_32b is
     port ( src_a     : in  std_logic_vector(31 downto 0);
            src_b     : in  std_logic_vector(31 downto 0);
            sum       : out std_logic_vector(31 downto 0);
@@ -129,12 +134,34 @@ component data_memory is
            clk          : in  std_logic;
            write_enable : in  std_logic;
            write_data   : in  std_logic_vector(31 downto 0);
-           read_mode    : in  std_logic;
-           ldsr_ctrl    : in  std_logic;
-           lrb_ctrl     : in  std_logic;
-           addr_in      : in  std_logic_vector(3 downto 0);
-           vote_record  : in  std_logic_vector(31 downto 0);
+           addr_in      : in  std_logic_vector(9 downto 0);
            data_out     : out std_logic_vector(31 downto 0) );
+end component;
+
+component mux_4to1_32b is
+    port ( mux_select : in  std_logic_vector(1 downto 0);
+           data_a     : in  std_logic_vector(31 downto 0);
+           data_b     : in  std_logic_vector(31 downto 0);
+           data_c     : in  std_logic_vector(31 downto 0);
+           data_d     : in  std_logic_vector(31 downto 0);
+           data_out   : out std_logic_vector(31 downto 0) );
+end component;
+
+component rotater is
+  Port ( control_word: in std_logic_vector(11 downto 0);
+         vote_record : in std_logic_vector(31 downto 0);
+         data_out   : out std_logic_vector(31 downto 0));
+end component;
+
+component swapper is
+  Port ( control_word: in std_logic_vector(12 downto 0);
+         vote_record : in std_logic_vector(31 downto 0);
+         data_out   : out std_logic_vector(31 downto 0));
+end component;
+
+component xor_module is
+    Port (  vote_record : in std_logic_vector(31 downto 0);
+            data_out    : out std_logic_vector(31 downto 0));
 end component;
 
 signal sig_next_pc              : std_logic_vector(3 downto 0);
@@ -156,8 +183,11 @@ signal sig_alu_src_b            : std_logic_vector(31 downto 0);
 signal sig_alu_result           : std_logic_vector(31 downto 0); 
 signal sig_alu_carry_out        : std_logic;
 signal sig_data_mem_out         : std_logic_vector(31 downto 0);
-signal sig_ldsr_ctrl            : std_logic;
-signal sig_lrb_ctrl             : std_logic;
+signal sig_rotater_out          : std_logic_vector(31 downto 0);
+signal sig_swapper_out          : std_logic_vector(31 downto 0);
+signal sig_xor_out              : std_logic_vector(31 downto 0);
+signal sig_exec_mux_out         : std_logic_vector(31 downto 0);
+signal sig_exec_to_memreg       : std_logic_vector(1 downto 0);
 
 begin
 
@@ -181,7 +211,7 @@ begin
                addr_in  => sig_curr_pc,
                insn_out => sig_insn );
 
-    sign_extend : sign_extend_4to16 
+    sign_extend : sign_extend_4to32 
     port map ( data_in  => sig_insn(3 downto 0),
                data_out => sig_sign_extended_offset );
 
@@ -192,8 +222,7 @@ begin
                alu_src    => sig_alu_src,
                mem_write  => sig_mem_write,
                mem_to_reg => sig_mem_to_reg,
-               ldsr_ctrl  => sig_ldsr_ctrl,
-               lrb_ctrl   => sig_lrb_ctrl);
+               ex_reg     => sig_exec_to_memreg);
 
     mux_reg_dst : mux_2to1_4b 
     port map ( mux_select => sig_reg_dst,
@@ -204,6 +233,9 @@ begin
     reg_file : register_file 
     port map ( reset           => reset, 
                clk             => clk,
+               control_word    => control_word,
+               start_signal    => start_signal,
+               vote_record     => vote_record,
                read_register_a => sig_insn(11 downto 8),
                read_register_b => sig_insn(7 downto 4),
                write_enable    => sig_reg_write,
@@ -212,13 +244,13 @@ begin
                read_data_a     => sig_read_data_a,
                read_data_b     => sig_read_data_b );
     
-    mux_alu_src : mux_2to1_16b 
+    mux_alu_src : mux_2to1_32b 
     port map ( mux_select => sig_alu_src,
                data_a     => sig_read_data_b,
                data_b     => sig_sign_extended_offset,
                data_out   => sig_alu_src_b );
 
-    alu : adder_16b 
+    alu : adder_32b 
     port map ( src_a     => sig_read_data_a,
                src_b     => sig_alu_src_b,
                sum       => sig_alu_result,
@@ -229,17 +261,35 @@ begin
                clk          => clk,
                write_enable => sig_mem_write,
                write_data   => sig_read_data_b,
-               read_mode    => '0',
-               ldsr_ctrl    => sig_ldsr_ctrl,
-               lrb_ctrl     => sig_lrb_ctrl,
-               addr_in      => sig_alu_result(3 downto 0),
-               vote_record  => x"21A74D50",
+               addr_in      => sig_alu_result(9 downto 0),
                data_out     => sig_data_mem_out );
                
-    mux_mem_to_reg : mux_2to1_16b 
+    mux_mem_to_reg : mux_2to1_32b 
     port map ( mux_select => sig_mem_to_reg,
-               data_a     => sig_alu_result,
+               data_a     => sig_exec_mux_out,
                data_b     => sig_data_mem_out,
                data_out   => sig_write_data );
+    
+    rotate_module: rotater
+    port map ( control_word => sig_read_data_b,
+               vote_record  => sig_read_data_a,
+               data_out     => sig_rotater_out);
 
+    swapper_module: swapper
+    port map ( control_word => sig_read_data_b,
+               vote_record  => sig_read_data_a,
+               data_out     => sig_swapper_out);
+
+    xorr_module: xor_module
+    port map ( vote_record  => sig_read_data_a,
+               data_out     => sig_xor_out);
+    
+    exec_mux: mux_4to1_32b
+    port map ( mux_select => sig_exec_to_memreg,
+               data_a     => sig_alu_result,
+               data_b     => sig_rotater_out,
+               data_c     => sig_swapper_out,
+               data_d     => sig_xor_out,
+               data_out   => sig_exec_mux_out);
+               
 end structural;

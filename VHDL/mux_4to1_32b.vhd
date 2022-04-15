@@ -2,9 +2,9 @@
 -- Company: 
 -- Engineer: 
 -- 
--- Create Date: 04/08/2022 06:48:11 PM
+-- Create Date: 04/16/2022 03:43:34 AM
 -- Design Name: 
--- Module Name: xor - Behavioral
+-- Module Name: mux_4to1_32b - Behavioral
 -- Project Name: 
 -- Target Devices: 
 -- Tool Versions: 
@@ -31,15 +31,21 @@ use IEEE.STD_LOGIC_1164.ALL;
 --library UNISIM;
 --use UNISIM.VComponents.all;
 
-entity xor_module is
-    Port (  vote_record : in std_logic_vector(31 downto 0);
-            data_out    : out std_logic_vector(31 downto 0));
-end xor_module;
+entity mux_4to1_32b is
+    port ( mux_select : in  std_logic_vector(1 downto 0);
+           data_a     : in  std_logic_vector(31 downto 0);
+           data_b     : in  std_logic_vector(31 downto 0);
+           data_c     : in  std_logic_vector(31 downto 0);
+           data_d     : in  std_logic_vector(31 downto 0);
+           data_out   : out std_logic_vector(31 downto 0) );
+end mux_4to1_32b;
 
-architecture Behavioral of xor_module is
-
+architecture Behavioral of mux_4to1_32b is
 begin
 
-    data_out <= x"000000" & (vote_record(31 downto 24) xor vote_record(23 downto 16) xor vote_record(15 downto 8) xor vote_record(7 downto 0));
-
+    data_out <= data_a when mux_select = "00" else
+                data_b when mux_select = "01" else
+                data_c when mux_select = "10" else
+                data_d when mux_select = "11";
+    
 end Behavioral;

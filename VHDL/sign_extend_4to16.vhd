@@ -22,12 +22,12 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_ARITH.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
-entity sign_extend_4to16 is
+entity sign_extend_4to32 is
     port ( data_in  : in  std_logic_vector(3 downto 0);
            data_out : out std_logic_vector(31 downto 0) );
-end sign_extend_4to16;
+end sign_extend_4to32;
 
-architecture behavioral of sign_extend_4to16 is
+architecture behavioral of sign_extend_4to32 is
 
 begin
     

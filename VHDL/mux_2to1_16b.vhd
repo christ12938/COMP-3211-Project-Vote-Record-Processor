@@ -22,14 +22,14 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_ARITH.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
-entity mux_2to1_16b is
+entity mux_2to1_32b is
     port ( mux_select : in  std_logic;
            data_a     : in  std_logic_vector(31 downto 0);
            data_b     : in  std_logic_vector(31 downto 0);
            data_out   : out std_logic_vector(31 downto 0) );
-end mux_2to1_16b;
+end mux_2to1_32b;
 
-architecture structural of mux_2to1_16b is
+architecture structural of mux_2to1_32b is
 
 component mux_2to1_1b is
     port ( mux_select : in  std_logic;
