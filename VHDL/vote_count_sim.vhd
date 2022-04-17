@@ -12,8 +12,9 @@ end VoteCountSim;
 architecture behave of VoteCountSim is
  
     -- 1 GHz = 2 nanoseconds period
-    constant c_CLOCK_PERIOD : time := 2 ns;
-    constant record_source: string := "records.txt";
+    constant c_CLOCK_PERIOD : time      := 2 ns;
+    constant record_source  : string    := "records.txt";
+    constant control_word   : string    := "";
 
 
     signal r_CLOCK     : std_logic := '0';
@@ -49,7 +50,7 @@ architecture behave of VoteCountSim is
             variable vote_record : integer; -- std_logic_vector(31 downto 0);
             variable busy : boolean;
         begin
-            
+            -- directly load control word from here
             -- read file
             file_open(read_file, record_source, read_mode);
             while not endfile(read_file) loop
@@ -61,6 +62,8 @@ architecture behave of VoteCountSim is
                     read(line_v, vote_record); -- turn txt to usable binary value
                     
                     -- TODO: send signal to input of processor
+                    
+                    
                     -- TODO: enable send instruction
                     
                     wait for 10ns ;

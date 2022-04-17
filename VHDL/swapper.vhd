@@ -32,9 +32,9 @@ use IEEE.NUMERIC_STD.ALL;
 --use UNISIM.VComponents.all;
 
 entity swapper is
-  Port ( control_word: in std_logic_vector(12 downto 0);
-         vote_record : in std_logic_vector(31 downto 0);
-         data_out   : out std_logic_vector(31 downto 0));
+  Port ( control_word   : in std_logic_vector(12 downto 0);
+         vote_record    : in std_logic_vector(31 downto 0);
+         data_out       : out std_logic_vector(31 downto 0));
 end swapper;
 
 architecture Behavioral of swapper is
@@ -65,3 +65,4 @@ begin
     data_out <= std_logic_vector(data);
 
 end Behavioral;
+ 
