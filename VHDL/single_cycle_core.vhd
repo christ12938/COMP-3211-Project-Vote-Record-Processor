@@ -60,19 +60,19 @@ architecture structural of single_cycle_core is
 component program_counter is
     port ( reset    : in  std_logic;
            clk      : in  std_logic;
-           addr_in  : in  std_logic_vector(3 downto 0);
-           addr_out : out std_logic_vector(3 downto 0) );
+           addr_in  : in  std_logic_vector(7 downto 0);
+           addr_out : out std_logic_vector(7 downto 0) );
 end component;
 
 component instruction_memory is
     port ( reset    : in  std_logic;
            clk      : in  std_logic;
-           addr_in  : in  std_logic_vector(3 downto 0);
-           insn_out : out std_logic_vector(15 downto 0) );
+           addr_in  : in  std_logic_vector(7 downto 0);
+           insn_out : out std_logic_vector(23 downto 0) );
 end component;
 
-component sign_extend_4to32 is
-    port ( data_in  : in  std_logic_vector(3 downto 0);
+component sign_extend_12to32 is
+    port ( data_in  : in  std_logic_vector(11 downto 0);
            data_out : out std_logic_vector(31 downto 0) );
 end component;
 
@@ -97,7 +97,9 @@ component control_unit is
            alu_src    : out std_logic;
            mem_write  : out std_logic;
            mem_to_reg : out std_logic;
-           ex_reg     : out std_logic_vector(1 downto 0));
+           ex_reg     : out std_logic_vector(1 downto 0);
+           cmp_mode   : out std_logic;
+           branch_jmp : out std_logic_vector(1 downto 0));
 end component;
 
 component register_file is
@@ -115,10 +117,10 @@ component register_file is
            read_data_b     : out std_logic_vector(31 downto 0) );
 end component;
 
-component adder_4b is
-    port ( src_a     : in  std_logic_vector(3 downto 0);
-           src_b     : in  std_logic_vector(3 downto 0);
-           sum       : out std_logic_vector(3 downto 0);
+component adder_8b is
+    port ( src_a     : in  std_logic_vector(7 downto 0);
+           src_b     : in  std_logic_vector(7 downto 0);
+           sum       : out std_logic_vector(7 downto 0);
            carry_out : out std_logic );
 end component;
 
@@ -164,11 +166,36 @@ component xor_module is
             data_out    : out std_logic_vector(31 downto 0));
 end component;
 
-signal sig_next_pc              : std_logic_vector(3 downto 0);
-signal sig_curr_pc              : std_logic_vector(3 downto 0);
-signal sig_one_4b               : std_logic_vector(3 downto 0);
+component comparator is
+    Port ( cmp_mode : std_logic;
+           data_a   : in std_logic_vector(31 downto 0);
+           data_b   : in std_logic_vector(31 downto 0);
+           output   : out std_logic);
+end component;
+
+component mux_2to1_8b is
+    port ( mux_select : in  std_logic;
+           data_a     : in  std_logic_vector(7 downto 0);
+           data_b     : in  std_logic_vector(7 downto 0);
+           data_out   : out std_logic_vector(7 downto 0) );
+end component;
+
+component mux_4to1_8b is
+    port ( mux_select : in  std_logic_vector(1 downto 0);
+           data_a     : in  std_logic_vector(7 downto 0);
+           data_b     : in  std_logic_vector(7 downto 0);
+           data_c     : in  std_logic_vector(7 downto 0);
+           data_d     : in  std_logic_vector(7 downto 0);
+           data_out   : out std_logic_vector(7 downto 0) );
+end component;
+
+
+signal sig_next_pc              : std_logic_vector(7 downto 0);
+signal sig_next_normal_pc       : std_logic_vector(7 downto 0);
+signal sig_curr_pc              : std_logic_vector(7 downto 0);
+signal sig_one_8b               : std_logic_vector(7 downto 0);
 signal sig_pc_carry_out         : std_logic;
-signal sig_insn                 : std_logic_vector(15 downto 0);
+signal sig_insn                 : std_logic_vector(23 downto 0);
 signal sig_sign_extended_offset : std_logic_vector(31 downto 0);
 signal sig_reg_dst              : std_logic;
 signal sig_reg_write            : std_logic;
@@ -188,10 +215,14 @@ signal sig_swapper_out          : std_logic_vector(31 downto 0);
 signal sig_xor_out              : std_logic_vector(31 downto 0);
 signal sig_exec_mux_out         : std_logic_vector(31 downto 0);
 signal sig_exec_to_memreg       : std_logic_vector(1 downto 0);
+signal sig_compare_output       : std_logic;
+signal sig_branch_addr          : std_logic_vector(7 downto 0);
+signal sig_cmp_mode             : std_logic;
+signal sig_branch_jmp          : std_logic_vector(1 downto 0);
 
 begin
 
-    sig_one_4b <= "0001";
+    sig_one_8b <= X"01";
 
     pc : program_counter
     port map ( reset    => reset,
@@ -199,10 +230,10 @@ begin
                addr_in  => sig_next_pc,
                addr_out => sig_curr_pc ); 
 
-    next_pc : adder_4b 
+    next_pc : adder_8b 
     port map ( src_a     => sig_curr_pc, 
-               src_b     => sig_one_4b,
-               sum       => sig_next_pc,   
+               src_b     => sig_one_8b,
+               sum       => sig_next_normal_pc,   
                carry_out => sig_pc_carry_out );
     
     insn_mem : instruction_memory 
@@ -211,22 +242,44 @@ begin
                addr_in  => sig_curr_pc,
                insn_out => sig_insn );
 
-    sign_extend : sign_extend_4to32 
-    port map ( data_in  => sig_insn(3 downto 0),
+    compare_module : comparator
+    port map ( cmp_mode => sig_cmp_mode,
+               data_a   => sig_read_data_a,
+               data_b   => sig_read_data_b,
+               output   => sig_compare_output); 
+    
+    mux_branch_jump : mux_2to1_8b
+    port map ( mux_select => sig_compare_output,
+               data_a     => sig_next_normal_pc,
+               data_b     => sig_insn(7 downto 0),
+               data_out   => sig_branch_addr); 
+    
+    jump_branch_mux: mux_4to1_8b
+    port map ( mux_select => sig_branch_jmp,
+               data_a     => sig_next_normal_pc,
+               data_b     => sig_insn(7 downto 0),
+               data_c     => sig_branch_addr,
+               data_d     => sig_next_normal_pc,
+               data_out   => sig_next_pc);
+                                
+    sign_extend : sign_extend_12to32 
+    port map ( data_in  => sig_insn(11 downto 0),
                data_out => sig_sign_extended_offset );
 
     ctrl_unit : control_unit 
-    port map ( opcode     => sig_insn(15 downto 12),
+    port map ( opcode     => sig_insn(23 downto 20),
                reg_dst    => sig_reg_dst,
                reg_write  => sig_reg_write,
                alu_src    => sig_alu_src,
                mem_write  => sig_mem_write,
                mem_to_reg => sig_mem_to_reg,
-               ex_reg     => sig_exec_to_memreg);
+               ex_reg     => sig_exec_to_memreg,
+               cmp_mode   => sig_cmp_mode,
+               branch_jmp => sig_branch_jmp);
 
     mux_reg_dst : mux_2to1_4b 
     port map ( mux_select => sig_reg_dst,
-               data_a     => sig_insn(7 downto 4),
+               data_a     => sig_insn(15 downto 12),
                data_b     => sig_insn(3 downto 0),
                data_out   => sig_write_register );
 
@@ -236,8 +289,8 @@ begin
                control_word    => control_word,
                start_signal    => start_signal,
                vote_record     => vote_record,
-               read_register_a => sig_insn(11 downto 8),
-               read_register_b => sig_insn(7 downto 4),
+               read_register_a => sig_insn(19 downto 16),
+               read_register_b => sig_insn(15 downto 12),
                write_enable    => sig_reg_write,
                write_register  => sig_write_register,
                write_data      => sig_write_data,
@@ -271,12 +324,12 @@ begin
                data_out   => sig_write_data );
     
     rotate_module: rotater
-    port map ( control_word => sig_read_data_b,
+    port map ( control_word => sig_read_data_b(24 downto 13),
                vote_record  => sig_read_data_a,
                data_out     => sig_rotater_out);
 
     swapper_module: swapper
-    port map ( control_word => sig_read_data_b,
+    port map ( control_word => sig_read_data_b(12 downto 0),
                vote_record  => sig_read_data_a,
                data_out     => sig_swapper_out);
 
