@@ -48,17 +48,22 @@ entity control_unit is
            alu_src    : out std_logic;
            mem_write  : out std_logic;
            mem_to_reg : out std_logic;
-           ex_reg     : out std_logic_vector(1 downto 0));
+           ex_reg     : out std_logic_vector(1 downto 0);
+           cmp_mode   : out std_logic;
+           branch_jmp : out std_logic_vector(1 downto 0));
 end control_unit;
 
 architecture behavioural of control_unit is
 
 constant OP_LOAD  : std_logic_vector(3 downto 0) := "0001";
-constant OP_STORE : std_logic_vector(3 downto 0) := "0011";
-constant OP_SWAP  : std_logic_vector(3 downto 0) := "0101";
-constant OP_ROLB  : std_logic_vector(3 downto 0) := "0110";
-constant OP_XORB  : std_logic_vector(3 downto 0) := "0111";
-constant OP_ADD   : std_logic_vector(3 downto 0) := "1000";
+constant OP_STORE : std_logic_vector(3 downto 0) := "0010";
+constant OP_SWAP  : std_logic_vector(3 downto 0) := "0011";
+constant OP_ROLB  : std_logic_vector(3 downto 0) := "0100";
+constant OP_XORB  : std_logic_vector(3 downto 0) := "0101";
+constant OP_ADD   : std_logic_vector(3 downto 0) := "0110";
+constant OP_JMP   : std_logic_vector(3 downto 0) := "0111";
+constant OP_BNE   : std_logic_vector(3 downto 0) := "1000";
+constant OP_BEQ   : std_logic_vector(3 downto 0) := "1001";
 
 
 begin
@@ -90,5 +95,11 @@ begin
                   "10" when opcode = OP_SWAP else
                   "11" when opcode = OP_XORB else
                   "00";
-        
+    
+    cmp_mode  <=  '1' when opcode = OP_BEQ else
+                  '0';
+                  
+    branch_jmp     <= "01" when opcode = OP_JMP else
+                      "10" when opcode = (OP_BNE or OP_BEQ) else
+                      "00";
 end behavioural;

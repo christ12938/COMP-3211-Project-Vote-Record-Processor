@@ -36,7 +36,7 @@ end component ;
                    clk    => r_CLOCK,
            control_word   => "1100001000010100101000110",
            start_signal   => '1',
-           vote_record    => "0100001101001110100110101010000");
+           vote_record    => "00100001101001110100110101010000");
        
         p_CLK_GEN : process is
         begin
@@ -54,7 +54,7 @@ end component ;
            wait for 2*c_CLOCK_PERIOD ;
                 r_reset <= '0';         
           
-          wait for 2 sec;
+          wait for 10 sec;
            
         end process;
          

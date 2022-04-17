@@ -78,7 +78,7 @@ begin
 
         -- enforces value zero for register $0
         var_regfile(0) := X"00000000";
-        var_regfile(1) := X"00" & control_word;
+        var_regfile(1) := "0000000" & control_word;
         var_regfile(2) := X"0000000" & "000" & start_signal;
         var_regfile(3) := vote_record;
         -- continuous read of the registers at location read_register_a
