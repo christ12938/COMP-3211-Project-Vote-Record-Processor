@@ -48,16 +48,13 @@ entity control_unit is
            alu_src    : out std_logic;
            mem_write  : out std_logic;
            mem_to_reg : out std_logic;
-           ldsr_ctrl  : out std_logic;
-           lrb_ctrl   : out std_logic);
+           ex_reg     : out std_logic_vector(1 downto 0));
 end control_unit;
 
 architecture behavioural of control_unit is
 
 constant OP_LOAD  : std_logic_vector(3 downto 0) := "0001";
-constant OP_LDSR  : std_logic_vector(3 downto 0) := "0010";
 constant OP_STORE : std_logic_vector(3 downto 0) := "0011";
-constant OP_LRB   : std_logic_vector(3 downto 0) := "0100";
 constant OP_SWAP  : std_logic_vector(3 downto 0) := "0101";
 constant OP_ROLB  : std_logic_vector(3 downto 0) := "0110";
 constant OP_XORB  : std_logic_vector(3 downto 0) := "0111";
@@ -66,12 +63,17 @@ constant OP_ADD   : std_logic_vector(3 downto 0) := "1000";
 
 begin
 
-    reg_dst    <= '1' when opcode = OP_ADD else
+    reg_dst    <= '1' when (opcode = OP_ADD
+                            or opcode = OP_SWAP
+                            or opcode = OP_ROLB
+                            or opcode = OP_XORB) else
                   '0';
 
     reg_write  <= '1' when (opcode = OP_ADD 
                             or opcode = OP_LOAD
-                            or opcode = OP_LDSR) else
+                            or opcode = OP_SWAP
+                            or opcode = OP_ROLB
+                            or opcode = OP_XORB) else
                   '0';
     
     alu_src    <= '1' when (opcode = OP_LOAD 
@@ -81,13 +83,12 @@ begin
     mem_write  <= '1' when opcode = OP_STORE else
                   '0';
                  
-    mem_to_reg <= '1' when (opcode = OP_LOAD
-                            or opcode = OP_LDSR
-                            or opcode = OP_LRB) else
+    mem_to_reg <= '1' when (opcode = OP_LOAD) else
                   '0';
-    
-    ldsr_ctrl <= '1' when opcode = OP_LDSR else '0';
-    
-    lrb_ctrl <= '1' when opcode = OP_LRB else '0';
-    
+                  
+    ex_reg     <= "01" when opcode = OP_ROLB else
+                  "10" when opcode = OP_SWAP else
+                  "11" when opcode = OP_XORB else
+                  "00";
+        
 end behavioural;

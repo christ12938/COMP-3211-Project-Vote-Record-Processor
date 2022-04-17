@@ -26,6 +26,9 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
 entity register_file is
     port ( reset           : in  std_logic;
            clk             : in  std_logic;
+           control_word    : in  std_logic_vector(24 downto 0);
+           start_signal    : in  std_logic;
+           vote_record     : in  std_logic_vector(31 downto 0);
            read_register_a : in  std_logic_vector(3 downto 0);
            read_register_b : in  std_logic_vector(3 downto 0);
            write_enable    : in  std_logic;
@@ -44,6 +47,9 @@ begin
 
     mem_process : process ( reset,
                             clk,
+                            control_word,
+                            start_signal,
+                            vote_record,
                             read_register_a,
                             read_register_b,
                             write_enable,
@@ -72,7 +78,9 @@ begin
 
         -- enforces value zero for register $0
         var_regfile(0) := X"00000000";
-
+        var_regfile(1) := X"00" & control_word;
+        var_regfile(2) := X"0000000" & "000" & start_signal;
+        var_regfile(3) := vote_record;
         -- continuous read of the registers at location read_register_a
         -- and read_register_b
         read_data_a <= var_regfile(var_read_addr_a); 

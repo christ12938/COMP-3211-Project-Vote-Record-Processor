@@ -28,36 +28,21 @@ entity data_memory is
            clk          : in  std_logic;
            write_enable : in  std_logic;
            write_data   : in  std_logic_vector(31 downto 0);
-           read_mode    : in  std_logic;
-           ldsr_ctrl    : in  std_logic;
-           lrb_ctrl     : in  std_logic;
-           addr_in      : in  std_logic_vector(3 downto 0);
-           vote_record  : in  std_logic_vector(31 downto 0);
+           addr_in      : in  std_logic_vector(9 downto 0);
            data_out     : out std_logic_vector(31 downto 0) );
 end data_memory;
 
 architecture behavioral of data_memory is
 
-constant control_word : std_logic_vector(24 downto 0) := "1100001000010100101000110";
-
-type vote_record_array is array(0 to 3) of std_logic_vector(7 downto 0);
-signal vote_record_list: vote_record_array;
-
-type mem_array is array(0 to 15) of std_logic_vector(31 downto 0);
+type mem_array is array(0 to 1023) of std_logic_vector(31 downto 0);
 signal sig_data_mem : mem_array;
 
 begin
-    
-    vote_record_list(0) <= vote_record(7 downto 0);
-    vote_record_list(1) <= vote_record(15 downto 8);
-    vote_record_list(2) <= vote_record(23 downto 16);
-    vote_record_list(3) <= vote_record(31 downto 24);
 
     mem_process: process ( clk,
                            write_enable,
                            write_data,
-                           addr_in,
-                           ldsr_ctrl) is
+                           addr_in) is
   
     variable var_data_mem : mem_array;
     variable var_addr     : integer;
@@ -67,22 +52,7 @@ begin
         
         if (reset = '1') then
             -- initial values of the data memory : reset to zero 
-            var_data_mem(0)  := X"0000000A";
-            var_data_mem(1)  := X"0000000B";
-            var_data_mem(2)  := X"00000000";
-            var_data_mem(3)  := X"00000000";
-            var_data_mem(4)  := X"00000000";
-            var_data_mem(5)  := X"00000000";
-            var_data_mem(6)  := X"00000000";
-            var_data_mem(7)  := X"00000000";
-            var_data_mem(8)  := X"00000000";
-            var_data_mem(9)  := X"00000000";
-            var_data_mem(10) := X"00000000";
-            var_data_mem(11) := X"00000000";
-            var_data_mem(12) := X"00000000";
-            var_data_mem(13) := X"00000000";
-            var_data_mem(14) := X"00000000";
-            var_data_mem(15) := X"00000000";
+            var_data_mem := (others => X"00000000");
 
         elsif (falling_edge(clk) and write_enable = '1') then
             -- memory writes on the falling clock edge
@@ -90,13 +60,7 @@ begin
         end if;
        
         -- continuous read of the memory location given by var_addr 
-        if ldsr_ctrl = '1' then
-            data_out <= "0000000" & control_word;
-        elsif lrb_ctrl = '1' then
-            data_out <= x"000000" & vote_record_list(var_addr);
-        else
-            data_out <= var_data_mem(var_addr);
-        end if;
+        data_out <= var_data_mem(var_addr);
  
         -- the following are probe signals (for simulation purpose) 
         sig_data_mem <= var_data_mem;

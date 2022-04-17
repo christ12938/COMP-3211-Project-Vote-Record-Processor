@@ -22,14 +22,14 @@ use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_ARITH.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 
-entity adder_16b is
+entity adder_32b is
     port ( src_a     : in  std_logic_vector(31 downto 0);
            src_b     : in  std_logic_vector(31 downto 0);
            sum       : out std_logic_vector(31 downto 0);
            carry_out : out std_logic );
-end adder_16b;
+end adder_32b;
 
-architecture behavioural of adder_16b is
+architecture behavioural of adder_32b is
 
 signal sig_result : std_logic_vector(32 downto 0);
 
