@@ -19,13 +19,18 @@ architecture behave of VoteCountSim is
 
     signal r_CLOCK     : std_logic := '0';
     signal r_reset     : std_logic := '0';
+    signal r_start_signal: std_logic := '0';
+    signal r_control_word: std_logic_vector;
+    signal r_vote_record : std_logic_vector;
  
 
     -- Component declaration for the Unit Under Test (UUT)
     component single_cycle_core is
-        port ( reset  : in  std_logic;
-           clk    : in  std_logic
-            );
+        port ( reset            : in  std_logic;
+           clk              : in  std_logic;
+           control_word     : in  std_logic_vector(24 downto 0);
+           start_signal     : in  std_logic;
+           vote_record      : in  std_logic_vector(31 downto 0));
     end component ;
           
     begin
@@ -34,7 +39,11 @@ architecture behave of VoteCountSim is
         --      -  
         UUT : single_cycle_core port map (
             reset    => r_reset,
-            clk     => r_CLOCK 
+            clk     => r_CLOCK,
+            control_word => r_control_word,
+            start_signal => r_start_signal,
+            vote_record => r_vote_record
+            
         );
        
         p_CLK_GEN : process is
@@ -47,8 +56,8 @@ architecture behave of VoteCountSim is
             -- initialise reading text file
             variable line_v : line;
             file read_file : text;
-            variable vote_record : integer; -- std_logic_vector(31 downto 0);
             variable busy : boolean;
+            variable line_data: integer;
         begin
             -- directly load control word from here
             -- read file
@@ -57,18 +66,22 @@ architecture behave of VoteCountSim is
                 busy := false;
                 if busy then
                     wait for 100ns;
-                else 
+                else
                     readline(read_file, line_v);
-                    read(line_v, vote_record); -- turn txt to usable binary value
                     
-                    -- TODO: send signal to input of processor
+                    -- turn txt to usable binary value
+                    read(line_v, line_data);
                     
+                    -- send signal to input of processor
+                    r_vote_record <= std_logic_vector(to_unsigned(line_data, r_vote_record'length));
                     
-                    -- TODO: enable send instruction
+                    -- enable send instruction
+                    r_start_signal <= '1';
                     
                     wait for 10ns ;
                     
-                    -- TODO: disable send instruction
+                    -- disable send instruction
+                    r_start_signal <= '0';
                 end if;
             end loop;
             

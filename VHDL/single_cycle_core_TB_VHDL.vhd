@@ -10,21 +10,21 @@ end Single_cycle_core_TB_VHDL;
 
 architecture behave of Single_cycle_core_TB_VHDL is
  
-  -- 1 GHz = 2 nanoseconds period
-  constant c_CLOCK_PERIOD : time := 2 ns; 
+    -- 1 GHz = 2 nanoseconds period
+    constant c_CLOCK_PERIOD : time := 2 ns; 
 
 
- signal r_CLOCK     : std_logic := '0';
- signal r_reset    : std_logic := '0';
+    signal r_CLOCK     : std_logic := '0';
+    signal r_reset    : std_logic := '0';
  
 
 -- Component declaration for the Unit Under Test (UUT)
 component single_cycle_core is
-    port ( reset  : in  std_logic;
-           clk    : in  std_logic;
-           control_word    : in  std_logic_vector(24 downto 0);
-           start_signal    : in  std_logic;
-           vote_record     : in  std_logic_vector(31 downto 0));
+    port ( reset            : in  std_logic;
+           clk              : in  std_logic;
+           control_word     : in  std_logic_vector(24 downto 0);
+           start_signal     : in  std_logic;
+           vote_record      : in  std_logic_vector(31 downto 0));
 end component ;
       
       
