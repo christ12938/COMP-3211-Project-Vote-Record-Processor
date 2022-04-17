@@ -1,7 +1,7 @@
-RECORD_PORT_MM_ADDR = 0xF000 # 0xFFFFF000 
-TAG_PORT_MM_ADDR    = 0xF004 # 0xFFFF0004 
-SEND_PORT_MM_ADDR   = 0xF008 # 0xFFFF0008
-BUSY_PORT_MM_ADDR   = 0xF00C # 0xFFFF000C
+RECORD_PORT_MM_ADDR = 0xC00 # 0xFFFFF000 
+TAG_PORT_MM_ADDR    = 0xC04 # 0xFFFF0004 
+SEND_PORT_MM_ADDR   = 0xC08 # 0xFFFF0008
+BUSY_PORT_MM_ADDR   = 0xC0C # 0xFFFF000C
 
 #     31 27   26 23   22                      0
 #   | ddddd | ccc c | vvvvvvv vvvvvvvv vvvvvvvv |
@@ -11,13 +11,13 @@ DISTR_ID_OFF   = 27
 CANDT_ID_OFF   = 23
 VOTE_COUNT_OFF = 0
 
-DISTR_ID_MSK   = (0x1F << DISTR_ID_OFF)
-CANDT_ID_MSK   = (0x0F << CANDT_ID_OFF)
-VOTE_COUNT_MSK = (0x3FFFFF << VOTE_COUNT_OFF)
+DISTR_ID_MSK   = 0x1F
+CANDT_ID_MSK   = 0x0F
+VOTE_COUNT_MSK = 0x7FFFFF
 
 	.data
 ctrl_word:
-	.space	1
+	.space	4
 vote_count_table:
 	.space	2048	# 2^4 * 2^5 * 4
 
@@ -31,8 +31,21 @@ vote_count_totals:
 	#	$t0 = uint32_t send
 	#	$t1 = vote_record_t rec
 main:
-	addi	$t2, $zero, 0x12345678
-	lw	$t2, ctrl_word
+	# addi	$t2, $zero, 0x01345678
+	addi	$t2, $zero, 0x13		# li  $t2, 0x13
+	addi	$t3, $zero, 20
+	sllv	$t2, $t2, $t3
+	addi	$t3, $t3, $t2			# ori $t3, $t3, $t2
+
+	addi	$t2, $zero, 0x45		# li  $t2, 0x45
+	addi	$t2, $t2, 12
+	sllv	$t2, $t2, $t3
+	addi	$t3, $t3, $t2			# ori $t3, $t3, $t2
+
+	addi	$t2, $zero, 0x678		# li  $t2, 0x678
+	addi	$t3, $t3, $t2			# ori $t3, $t3, $t2
+
+	sw	$t2, ctrl_word
 
 main_while_1:
 						# while (1)
@@ -68,21 +81,21 @@ process_record_if_tag_valid:
 	j	process_record_rtn			#   return
 
 process_record_if_tag_valid_t:
-	# uint32_t candt_id = (packet.vote_record & CANDT_ID_MSK) >> CANDT_ID_OFF;
+	# uint32_t candt_id = (packet.vote_record >> CANDT_ID_OFF) & CANDT_ID_MSK;
+	addi	$t4, $zero, CANDT_ID_OFF
+	srlv	$t1, $t1, $t4				# (s)hift word (r)ight (l)ogical (v)ariable
 	addi	$t4, $zero, CANDT_ID_MSK
 	and	$t1, $a0, $t4
-	addi	$t4, $zero, CANDT_ID_OFF
-	srlv	$t1, $t1, $t4		# (s)hift word (r)ight (l)ogical (v)ariable
-	# uint32_t distr_id = (packet.vote_record & DISTR_ID_MSK) >> DISTR_ID_OFF;
+	# uint32_t distr_id = (packet.vote_record >> DISTR_ID_OFF) & DISTR_ID_MSK;
+	addi	$t4, $zero, DISTR_ID_OFF
+	srlv	$t2, $t2, $t4		
 	addi	$t4, $zero, DISTR_ID_MSK
 	and	$t2, $a1, $t4
-	addi	$t4, $zero, DISTR_ID_OFF
-	srlv	$t2, $t2, $t4		# shift word right logical variable
-	# uint32_t vote_count = (packet.vote_record & VOTE_COUNT_MSK) >> VOTE_COUNT_OFF;
-	addi	$t4, $zero, VOTE_COUNT_MSK
-	and	$t3, $a2, $t4
+	# uint32_t vote_count = (packet.vote_record >> VOTE_COUNT_OFF) & VOTE_COUNT_MSK;
 	addi	$t4, $zero, VOTE_COUNT_OFF
-	srlv	$t3, $t3, $t4		# shift word right logical variable
+	srlv	$t3, $t3, $t4
+	# addi	$t4, $zero, VOTE_COUNT_MSK
+	# and	$t3, $a2, $t4
 
 	add	$a0, $t1, $zero
 	add	$a1, $t2, $zero
