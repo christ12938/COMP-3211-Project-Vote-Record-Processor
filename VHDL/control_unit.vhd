@@ -48,9 +48,12 @@ entity control_unit is
            alu_src    : out std_logic;
            mem_write  : out std_logic;
            mem_to_reg : out std_logic;
-           ex_reg     : out std_logic_vector(1 downto 0);
+           ex_reg     : out std_logic_vector(2 downto 0);
            cmp_mode   : out std_logic;
-           branch_jmp : out std_logic_vector(1 downto 0));
+           branch_jmp : out std_logic_vector(1 downto 0);
+           mem_read   : out std_logic;
+           shift_mode : out std_logic;
+           alu_mode   : out std_logic);
 end control_unit;
 
 architecture behavioural of control_unit is
@@ -64,25 +67,36 @@ constant OP_ADD   : std_logic_vector(3 downto 0) := "0110";
 constant OP_JMP   : std_logic_vector(3 downto 0) := "0111";
 constant OP_BNE   : std_logic_vector(3 downto 0) := "1000";
 constant OP_BEQ   : std_logic_vector(3 downto 0) := "1001";
-
+constant OP_ADDI  : std_logic_vector(3 downto 0) := "1010";
+constant OP_SLLV  : std_logic_vector(3 downto 0) := "1011";
+constant OP_SRLV  : std_logic_vector(3 downto 0) := "1100";
+constant OP_SUB   : std_logic_vector(3 downto 0) := "1101";
 
 begin
 
     reg_dst    <= '1' when (opcode = OP_ADD
                             or opcode = OP_SWAP
                             or opcode = OP_ROLB
-                            or opcode = OP_XORB) else
+                            or opcode = OP_XORB
+                            or opcode = OP_SLLV
+                            or opcode = OP_SRLV
+                            or opcode = OP_SUB) else
                   '0';
 
     reg_write  <= '1' when (opcode = OP_ADD 
                             or opcode = OP_LOAD
                             or opcode = OP_SWAP
                             or opcode = OP_ROLB
-                            or opcode = OP_XORB) else
+                            or opcode = OP_XORB
+                            or opcode = OP_ADDI
+                            or opcode = OP_SLLV
+                            or opcode = OP_SRLV
+                            or opcode = OP_SUB) else
                   '0';
     
     alu_src    <= '1' when (opcode = OP_LOAD 
-                           or opcode = OP_STORE) else
+                           or opcode = OP_STORE
+                           or opcode = OP_ADDI) else
                   '0';
                  
     mem_write  <= '1' when opcode = OP_STORE else
@@ -91,15 +105,26 @@ begin
     mem_to_reg <= '1' when (opcode = OP_LOAD) else
                   '0';
                   
-    ex_reg     <= "01" when opcode = OP_ROLB else
-                  "10" when opcode = OP_SWAP else
-                  "11" when opcode = OP_XORB else
-                  "00";
+    ex_reg     <= "001" when opcode = OP_ROLB else
+                  "010" when opcode = OP_SWAP else
+                  "011" when opcode = OP_XORB else
+                  "100" when (opcode = OP_SLLV or opcode = OP_SRLV) else
+                  "000";
     
     cmp_mode  <=  '1' when opcode = OP_BEQ else
                   '0';
                   
     branch_jmp     <= "01" when opcode = OP_JMP else
-                      "10" when opcode = (OP_BNE or OP_BEQ) else
+                      "10" when (opcode = OP_BNE or opcode = OP_BEQ) else
                       "00";
+                      
+    mem_read <= '1' when opcode = OP_LOAD else
+                '0';
+                
+    shift_mode <= '1' when opcode = OP_SRLV else
+                  '0';
+                  
+    alu_mode <= '1' when opcode = OP_SUB else
+                '0';
+                
 end behavioural;

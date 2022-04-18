@@ -22,7 +22,6 @@ architecture behave of Single_cycle_core_TB_VHDL is
 component single_cycle_core is
     port ( reset  : in  std_logic;
            clk    : in  std_logic;
-           control_word    : in  std_logic_vector(24 downto 0);
            start_signal    : in  std_logic;
            vote_record     : in  std_logic_vector(31 downto 0));
 end component ;
@@ -34,7 +33,6 @@ end component ;
         UUT : single_cycle_core
         port map ( reset  => r_reset,
                    clk    => r_CLOCK,
-           control_word   => "1100001000010100101000110",
            start_signal   => '1',
            vote_record    => "00100001101001110100110101010000");
        
