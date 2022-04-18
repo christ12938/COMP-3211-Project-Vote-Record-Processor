@@ -25,26 +25,12 @@ vote_count_totals:
 	.space	64	# 2^4 * 4
 
 	.text
-
 	# void main(void);
 	# locals:
 	#	$t0 = uint32_t send
 	#	$t1 = vote_record_t rec
 main:
-	# addi	$t2, $zero, 0x01345678
-	addi	$t2, $zero, 0x13		# li  $t2, 0x13
-	addi	$t3, $zero, 20
-	sllv	$t2, $t2, $t3
-	addi	$t3, $t3, $t2			# ori $t3, $t3, $t2
-
-	addi	$t2, $zero, 0x45		# li  $t2, 0x45
-	addi	$t2, $t2, 12
-	sllv	$t2, $t2, $t3
-	addi	$t3, $t3, $t2			# ori $t3, $t3, $t2
-
-	addi	$t2, $zero, 0x678		# li  $t2, 0x678
-	addi	$t3, $t3, $t2			# ori $t3, $t3, $t2
-
+	li	$t2, 0x01345678			# addi	$t2, $zero, 0x01345678
 	sw	$t2, ctrl_word
 
 main_while_1:
@@ -75,31 +61,31 @@ process_record:
 	j	compute_tag		
 compute_tag_rtn:
 
-	add	$t0, $zero, $v0				# tag_t tag_prime = compute_tag(rec);
+	move	$t0, $v0				# tag_t tag_prime = compute_tag(rec);
 process_record_if_tag_valid:
 	beq	$t0, $a1, process_record_if_tag_valid_t # if (tag_prime != packet.vote_tag)
 	j	process_record_rtn			#   return
 
 process_record_if_tag_valid_t:
 	# uint32_t candt_id = (packet.vote_record >> CANDT_ID_OFF) & CANDT_ID_MSK;
-	addi	$t4, $zero, CANDT_ID_OFF
+	li	$t4, CANDT_ID_OFF
 	srlv	$t1, $t1, $t4				# (s)hift word (r)ight (l)ogical (v)ariable
-	addi	$t4, $zero, CANDT_ID_MSK
+	li	$t4, CANDT_ID_MSK
 	and	$t1, $a0, $t4
 	# uint32_t distr_id = (packet.vote_record >> DISTR_ID_OFF) & DISTR_ID_MSK;
-	addi	$t4, $zero, DISTR_ID_OFF
+	li	$t4, DISTR_ID_OFF
 	srlv	$t2, $t2, $t4		
-	addi	$t4, $zero, DISTR_ID_MSK
+	li	$t4, DISTR_ID_MSK
 	and	$t2, $a1, $t4
 	# uint32_t vote_count = (packet.vote_record >> VOTE_COUNT_OFF) & VOTE_COUNT_MSK;
-	addi	$t4, $zero, VOTE_COUNT_OFF
+	li	$t4, VOTE_COUNT_OFF
 	srlv	$t3, $t3, $t4
 	# addi	$t4, $zero, VOTE_COUNT_MSK
 	# and	$t3, $a2, $t4
 
-	add	$a0, $t1, $zero
-	add	$a1, $t2, $zero
-	add	$a2, $t3, $zero
+	move	$a0, $t1		# addi	$a0, $t1, $zero
+	move	$a1, $t2
+	move	$a2, $t3
 	j	update_vote_count	# update_vote_count(candt_id, distr_id, vote_count)
 update_vote_count_rtn:
 
@@ -122,7 +108,7 @@ update_vote_count_rtn:
 	#	$t2 = uint32_t curr_total
 update_vote_count:
 	# uint32_t prev = vote_count_table[candt_id][distr_id];
-	addi	$t3, $zero, 2			# $t3 = 2
+	li	$t3, 2				# $t3 = 2
 	sllv	$t4, $a0, $t3			# $t4 = 4 * candt_id
 	sllv	$t5, $a1, $t3			# $t5 = 4 * distr_id
 	add	$t3, $t4, $t5			# $t3 = offset = (4 * candt_id) + (4 * distr_id)
