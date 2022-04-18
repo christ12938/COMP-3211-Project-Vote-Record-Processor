@@ -16,14 +16,16 @@ architecture behave of Single_cycle_core_TB_VHDL is
 
  signal r_CLOCK     : std_logic := '0';
  signal r_reset    : std_logic := '0';
- 
+ signal busy       : std_logic; 
 
 -- Component declaration for the Unit Under Test (UUT)
 component single_cycle_core is
     port ( reset  : in  std_logic;
            clk    : in  std_logic;
            start_signal    : in  std_logic;
-           vote_record     : in  std_logic_vector(31 downto 0));
+           vote_record     : in  std_logic_vector(31 downto 0);
+           tag             : in  std_logic_vector(7 downto 0);
+           busy            : out std_logic);
 end component ;
       
       
@@ -34,7 +36,9 @@ end component ;
         port map ( reset  => r_reset,
                    clk    => r_CLOCK,
            start_signal   => '1',
-           vote_record    => "00100001101001110100110101010000");
+           vote_record    => "00100001101001110100110101010000",
+           tag            => X"00",
+           busy           => busy);
        
         p_CLK_GEN : process is
         begin

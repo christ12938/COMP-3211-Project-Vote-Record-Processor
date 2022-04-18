@@ -51,7 +51,9 @@ entity single_cycle_core is
     port ( reset  : in  std_logic;
            clk    : in  std_logic;
            start_signal    : in  std_logic;
-           vote_record     : in  std_logic_vector(31 downto 0));
+           vote_record     : in  std_logic_vector(31 downto 0);
+           tag             : in  std_logic_vector(7 downto 0);
+           busy            : out std_logic);
 end single_cycle_core;
 
 architecture structural of single_cycle_core is
@@ -109,13 +111,15 @@ component register_file is
            clk             : in  std_logic;
            start_signal    : in  std_logic;
            vote_record     : in  std_logic_vector(31 downto 0);
+           tag             : in  std_logic_vector(7 downto 0);
            read_register_a : in  std_logic_vector(3 downto 0);
            read_register_b : in  std_logic_vector(3 downto 0);
            write_enable    : in  std_logic;
            write_register  : in  std_logic_vector(3 downto 0);
            write_data      : in  std_logic_vector(31 downto 0);
            read_data_a     : out std_logic_vector(31 downto 0);
-           read_data_b     : out std_logic_vector(31 downto 0) );
+           read_data_b     : out std_logic_vector(31 downto 0);
+           busy            : out std_logic );
 end component;
 
 component adder_8b is
@@ -548,13 +552,15 @@ begin
                clk             => clk,
                start_signal    => start_signal,
                vote_record     => vote_record,
+               tag             => tag,
                read_register_a => sig_insn(19 downto 16),
                read_register_b => sig_insn(15 downto 12),
                write_enable    => sig_reg_write,
                write_register  => sig_write_register,
                write_data      => sig_write_data,
                read_data_a     => ID_EX_read_data_1,
-               read_data_b     => ID_EX_read_data_2);
+               read_data_b     => ID_EX_read_data_2,
+               busy            => busy);
     
     mux_alu_src : mux_2to1_32b 
     port map ( mux_select => sig_alu_src,
