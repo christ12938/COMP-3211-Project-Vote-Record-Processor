@@ -103,7 +103,7 @@ component control_unit is
            branch_jmp : out std_logic_vector(1 downto 0);
            mem_read   : out std_logic;
            shift_mode : out std_logic;
-           alu_mode   : out std_logic);
+           alu_mode   : out std_logic_vector(1 downto 0));
 end component;
 
 component register_file is
@@ -131,7 +131,7 @@ component adder_8b is
 end component;
 
 component adder_32b is
-    port ( alu_mode  : in  std_logic;
+    port ( alu_mode  : in  std_logic_vector(1 downto 0) ;
            src_a     : in  std_logic_vector(31 downto 0);
            src_b     : in  std_logic_vector(31 downto 0);
            sum       : out std_logic_vector(31 downto 0);
@@ -164,9 +164,10 @@ component rotater is
 end component;
 
 component swapper is
-  Port ( control_word: in std_logic_vector(12 downto 0);
-         vote_record : in std_logic_vector(31 downto 0);
-         data_out   : out std_logic_vector(31 downto 0));
+  Port ( swapper_start  : in std_logic_vector(2 downto 0);
+         control_word   : in std_logic_vector(12 downto 0);
+         vote_record    : in std_logic_vector(31 downto 0);
+         data_out       : out std_logic_vector(31 downto 0));
 end component;
 
 component xor_module is
@@ -221,9 +222,9 @@ component ID_EX_pipe is
          register_rt_in : in std_logic_vector(3 downto 0);
          mem_read_in    : in std_logic;
          shift_mode_in  : in std_logic;
-         alu_mode_in    : in std_logic;
-         cmp_mode_in    : in std_logic;
-         branch_jmp_in  : in std_logic_vector(1 downto 0);
+         alu_mode_in    : in std_logic_vector(1 downto 0);
+         cmp_mode_in    : in  std_logic;
+         branch_jmp_in  : in  std_logic_vector(1 downto 0);
          mem_to_reg_out : out std_logic;
          mem_write_out  : out std_logic;
          alu_src_out    : out std_logic;
@@ -237,7 +238,7 @@ component ID_EX_pipe is
          register_rt_out: out std_logic_vector(3 downto 0);
          mem_read_out   : out std_logic;
          shift_mode_out : out std_logic;
-         alu_mode_out   : out std_logic;
+         alu_mode_out   : out std_logic_vector(1 downto 0);
          cmp_mode_out   : out std_logic;
          branch_jmp_out : out std_logic_vector(1 downto 0));
 end component;
@@ -303,7 +304,7 @@ component stalling_ctrl_unit is
          ex_reg_in      : in  std_logic_vector(2 downto 0);
          mem_read_in    : in  std_logic;
          shift_mode_in  : in  std_logic;
-         alu_mode_in    : in  std_logic;
+         alu_mode_in    : in  std_logic_vector(1 downto 0);
          cmp_mode_in    : in  std_logic;
          branch_jmp_in  : in  std_logic_vector(1 downto 0);
          reg_write_out  : out std_logic;
@@ -313,9 +314,9 @@ component stalling_ctrl_unit is
          ex_reg_out     : out std_logic_vector(2 downto 0);
          mem_read_out   : out std_logic;
          shift_mode_out : out std_logic;
-         alu_mode_out   : out std_logic;
+         alu_mode_out   : out std_logic_vector(1 downto 0);
          cmp_mode_out   : out std_logic;
-         branch_jmp_out : out  std_logic_vector(1 downto 0));
+         branch_jmp_out : out std_logic_vector(1 downto 0));  
 end component;
 
 component forwarding_unit is
@@ -416,9 +417,9 @@ signal ID_EX_shift_mode         : std_logic;
 signal sig_shift_mode           : std_logic;
 signal stall_shift_mode         : std_logic;
 signal sig_shifter_out          : std_logic_vector(31 downto 0);
-signal stall_alu_mode           : std_logic;
-signal ID_EX_alu_mode           : std_logic;
-signal sig_alu_mode             : std_logic;
+signal stall_alu_mode           : std_logic_vector(1 downto 0);
+signal ID_EX_alu_mode           : std_logic_vector(1 downto 0);
+signal sig_alu_mode             : std_logic_vector(1 downto 0);
 signal stall_cmp_mode           : std_logic;
 signal stall_branch_jmp         : std_logic_vector(1 downto 0);
 signal ID_EX_cmp_mode           : std_logic;
@@ -716,7 +717,8 @@ begin
                data_out     => sig_rotater_out);
 
     swapper_module: swapper
-    port map ( control_word => sig_read_data_b(12 downto 0),
+    port map ( swapper_start => sig_exec_to_memreg,
+               control_word => sig_read_data_b(12 downto 0),
                vote_record  => sig_read_data_a,
                data_out     => sig_swapper_out);
 

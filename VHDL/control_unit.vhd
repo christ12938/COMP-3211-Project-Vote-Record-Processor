@@ -53,7 +53,7 @@ entity control_unit is
            branch_jmp : out std_logic_vector(1 downto 0);
            mem_read   : out std_logic;
            shift_mode : out std_logic;
-           alu_mode   : out std_logic);
+           alu_mode   : out std_logic_vector(1 downto 0));
 end control_unit;
 
 architecture behavioural of control_unit is
@@ -71,6 +71,8 @@ constant OP_ADDI  : std_logic_vector(3 downto 0) := "1010";
 constant OP_SLLV  : std_logic_vector(3 downto 0) := "1011";
 constant OP_SRLV  : std_logic_vector(3 downto 0) := "1100";
 constant OP_SUB   : std_logic_vector(3 downto 0) := "1101";
+constant OP_MUL   : std_logic_vector(3 downto 0) := "1110";
+
 
 begin
 
@@ -80,7 +82,8 @@ begin
                             or opcode = OP_XORB
                             or opcode = OP_SLLV
                             or opcode = OP_SRLV
-                            or opcode = OP_SUB) else
+                            or opcode = OP_SUB
+                            or opcode = OP_MUL) else
                   '0';
 
     reg_write  <= '1' when (opcode = OP_ADD 
@@ -91,7 +94,8 @@ begin
                             or opcode = OP_ADDI
                             or opcode = OP_SLLV
                             or opcode = OP_SRLV
-                            or opcode = OP_SUB) else
+                            or opcode = OP_SUB
+                            or opcode = OP_MUL) else
                   '0';
     
     alu_src    <= '1' when (opcode = OP_LOAD 
@@ -124,7 +128,8 @@ begin
     shift_mode <= '1' when opcode = OP_SRLV else
                   '0';
                   
-    alu_mode <= '1' when opcode = OP_SUB else
-                '0';
+    alu_mode <= "01" when opcode = OP_SUB else
+                "10" when opcode = OP_MUL else
+                "00";
                 
 end behavioural;
