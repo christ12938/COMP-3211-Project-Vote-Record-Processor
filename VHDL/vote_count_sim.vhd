@@ -3,6 +3,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use std.textio.all;
+use ieee.std_logic_textio.all;
 
 
 entity VoteCountSim is
@@ -57,7 +58,7 @@ architecture behave of VoteCountSim is
             variable line_v : line;
             file read_file : text;
             variable busy : boolean;
-            variable line_data: integer; 
+            variable line_data: std_logic_vector(31 downto 0); 
             
         begin
             r_reset <= '1';
@@ -67,7 +68,7 @@ architecture behave of VoteCountSim is
             -- none
             
             -- read file
-            file_open(read_file, record_source, read_mode);
+            file_open(read_file, record_source, read_mode); 
             
             while not endfile(read_file) loop
                 busy := false;
@@ -83,7 +84,7 @@ architecture behave of VoteCountSim is
                     read(line_v, line_data);
                     
                     -- send signal to input of processor
-                    r_vote_record <= std_logic_vector(to_unsigned(line_data, r_vote_record'length));
+                    r_vote_record <= line_data;
                     
                     -- enable send instruction
                     r_start_signal <= '1';
