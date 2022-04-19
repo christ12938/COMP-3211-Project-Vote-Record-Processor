@@ -5,6 +5,12 @@ import copy
 from functools import reduce
 from enum import Enum
 
+N_NOP_AFTER_EACH_INSTR = 0
+
+REG_TYPE_2_MAX_NUM = { "t": 5, "s": 0, "a": 3, "v": 1 }
+REG_TYPE_2_OFFSET = { "t": 5, "s": 11, "a": 11, "v": 14 }
+ASM_TEMP_REG = 15
+
 class bcolors:
     PURPLE = '\033[95m'
     BLUE = '\033[94m'
@@ -15,11 +21,6 @@ class bcolors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
-
-
-REG_TYPE_2_MAX_NUM = { "t": 5, "s": 0, "a": 3, "v": 1 }
-REG_TYPE_2_OFFSET = { "t": 5, "s": 11, "a": 11, "v": 14 }
-ASM_TEMP_REG = 15
 
 class Instruction(Enum):
     ADD_IMM = "addi"
@@ -109,6 +110,7 @@ def strip(line):
 def encode_instr(instruction):
     instr_func, func_args = instruction
 
+    print(instr_func)
     if instr_func == Instruction.NOP:
         bit_str = '{0:0>24}'.format(bin(0x00)[2:])
         return (0x000000, bit_str)
@@ -309,11 +311,15 @@ def emit_instrs(lines):
 
     instructions = []
 
+    nop_instr = (Instruction.NOP, (), ())
+
     # 1st pass
     for line_type, parsed_line, line_info in parse_lines(lines):
 
         if line_type == AssemblyDataType.INSTRUCTION:
             created_instrs = [instr + ((line_info),) for instr in create_instr(parsed_line, constants)]
+            created_instrs = [[instr] + ([nop_instr] * N_NOP_AFTER_EACH_INSTR) for instr in created_instrs]
+            created_instrs = [item for sublist in created_instrs for item in sublist]
             next_text_addr = next_text_addr + len(created_instrs)
             instructions = instructions + created_instrs
 
@@ -341,12 +347,13 @@ def emit_instrs(lines):
             print(f'line_type {line_type} not supported')
             exit(1)
 
+    instructions.append(nop_instr)
+
     def resolve_labels(func_args):
         return tuple([labels[a] if a in labels else a for a in func_args])
 
     # 2nd pass
-    nop_instr = (Instruction.NOP, (), ())
-    for instr_addr, instruction in enumerate(instructions + [nop_instr]):
+    for instr_addr, instruction in enumerate(instructions):
         instr_func, func_args, line_info = instruction
         res_func_args = resolve_labels(func_args)
         bit24, debug_str = encode_instr((instr_func, res_func_args))
