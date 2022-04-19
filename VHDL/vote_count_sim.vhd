@@ -15,23 +15,25 @@ architecture behave of VoteCountSim is
     -- 1 GHz = 2 nanoseconds period
     constant c_CLOCK_PERIOD : time      := 2 ns;
     constant record_source      : string                        := "voterecords.txt";
-    constant control_word_source: std_logic_vector(24 downto 0) := "1100001000010100101000110";
+    -- constant control_word_source: std_logic_vector(24 downto 0) := "1100001000010100101000110";
 
 
     signal r_CLOCK     : std_logic := '0';
     signal r_reset     : std_logic := '0';
     signal r_start_signal: std_logic := '0';
-    signal r_control_word: std_logic_vector(24 downto 0) := control_word_source;
+    -- signal r_control_word: std_logic_vector(24 downto 0) := control_word_source;
     signal r_vote_record : std_logic_vector(31 downto 0) := (others => '0');
- 
-
+    signal r_busy: std_logic;
+    
+    
     -- Component declaration for the Unit Under Test (UUT)
     component single_cycle_core is
-        port ( reset            : in  std_logic;
-           clk              : in  std_logic;
-           control_word     : in  std_logic_vector(24 downto 0);
-           start_signal     : in  std_logic;
-           vote_record      : in  std_logic_vector(31 downto 0));
+        port ( reset  : in  std_logic;
+           clk    : in  std_logic;
+           start_signal    : in  std_logic;
+           vote_record     : in  std_logic_vector(31 downto 0);
+           tag             : in  std_logic_vector(7 downto 0);
+           busy            : out std_logic);
     end component ;
           
     begin
@@ -41,10 +43,10 @@ architecture behave of VoteCountSim is
         UUT : single_cycle_core port map (
             reset    => r_reset,
             clk     => r_CLOCK,
-            control_word => r_control_word,
             start_signal => r_start_signal,
-            vote_record => r_vote_record
-            
+            vote_record => r_vote_record,
+            tag            => X"00",
+            busy           => r_busy
         );
        
         p_CLK_GEN : process is
@@ -57,7 +59,6 @@ architecture behave of VoteCountSim is
             -- initialise reading text file
             variable line_v : line;
             file read_file : text;
-            variable busy : boolean;
             variable line_data: std_logic_vector(31 downto 0); 
             
         begin
@@ -72,11 +73,10 @@ architecture behave of VoteCountSim is
             file_open(read_file, record_source, read_mode); 
             
             while not endfile(read_file) loop
-                busy := false;
                 
                 r_start_signal <= '0';
                 
-                if busy then
+                if r_busy = '1' then
                     wait for 100ns;
                 else
                     readline(read_file, line_v);
@@ -90,10 +90,10 @@ architecture behave of VoteCountSim is
                     -- enable send instruction
                     r_start_signal <= '1';
                     
-                    wait for 10ns;
+                    wait until r_busy = '1';
                     
                     -- disable send instruction
-                    r_start_signal <= '0';
+                    -- r_start_signal <= '0';
                     
                 end if;
             end loop;
