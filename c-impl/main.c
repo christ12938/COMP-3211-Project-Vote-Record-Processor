@@ -84,8 +84,8 @@ static vote_record_t votes[N_VOTES] = {
     vote_record_create(1, 4, 40),
     vote_record_create(2, 1, 50)
     */
-    // vote_record_create(8, 6, 5197136)
-    vote_record_create(3, 4, 10)
+    vote_record_create(8, 6, 5197136)
+    //vote_record_create(3, 4, 10)
 };
 
 void init_ctrl_word() {
@@ -107,8 +107,8 @@ void init_ctrl_word() {
     ctrl_wrd |= 2u << CTRL_WRD_S_OFF;
     ctrl_wrd |= 2u << CTRL_WRD_P2_OFF;
     ctrl_wrd |= 4u << CTRL_WRD_P1_OFF;
-    ctrl_wrd |= 2u << CTRL_WRD_B2_OFF;
-    ctrl_wrd |= 1u << CTRL_WRD_B1_OFF;
+    ctrl_wrd |= 1u << CTRL_WRD_B2_OFF;
+    ctrl_wrd |= 2u << CTRL_WRD_B1_OFF;
 }
 
 void swap(vote_record_t* record) {
@@ -122,7 +122,10 @@ void swap(vote_record_t* record) {
         b1, b2, p1, p2, s);
 
     /*
-        record = 0b 01000011 01001111 01001101 01010000
+        ctrl_wrd = 0x1842946
+
+        record = vote_record_create(8, 6, 5197136)
+               = 0b 01000011 01001111 01001101 01010000
         
         swap(b1=2, b2=1, p1=4, p2=2, s=2)
 
@@ -143,14 +146,14 @@ void swap(vote_record_t* record) {
 
     vote_record_t record_lc = *record;
 
-    uint8_t pos_1 = 8*b1 + p1;
-    uint8_t pos_2 = 8*b2 + p2;
+    uint8_t pos_1 = 8*b1 + p1;                        // 20
+    uint8_t pos_2 = 8*b2 + p2;                        // 10
 
-    uint32_t b1_msk = ~(0xFFFFFFFF << s) << pos_1;
-    uint32_t b2_msk = ~(0xFFFFFFFF << s) << pos_2;
+    uint32_t b1_msk = ~(0xFFFFFFFF << s) << pos_1;    // 0x00300000
+    uint32_t b2_msk = ~(0xFFFFFFFF << s) << pos_2;    // 0x00000C00
 
-    uint32_t b1_bits = (record_lc & b1_msk) >> pos_1;
-    uint32_t b2_bits = (record_lc & b2_msk) >> pos_2;
+    uint32_t b1_bits = (record_lc & b1_msk) >> pos_1; // 0b00
+    uint32_t b2_bits = (record_lc & b2_msk) >> pos_2; // 0b11
 
     uint32_t swapped_record = (record_lc & ~b2_msk);
     swapped_record |= (b1_bits << pos_2);
@@ -176,19 +179,32 @@ tag_t compute_tag(vote_record_t record) {
     uint8_t d1 = (record & 0x0000FF00) >> 8;
     uint8_t d0 = (record & 0x000000FF) >> 0;
 
+    // r3=6, r2=0, r1=4, r0=1
+    // 0b 01000011 01111111 01000001 01010000
+
     uint32_t r3 = (ctrl_wrd & CTRL_WRD_R3_MSK) >> CTRL_WRD_R3_OFF;
     rot_left_shift(&d3, r3);
+
+    // 0b 01000011 01111111 01000001 01010000
 
     uint32_t r2 = (ctrl_wrd & CTRL_WRD_R2_MSK) >> CTRL_WRD_R2_OFF;
     rot_left_shift(&d2, r2);
 
+    // 0b 11010000 01111111 01000001 01010000
+
     uint32_t r1 = (ctrl_wrd & CTRL_WRD_R1_MSK) >> CTRL_WRD_R1_OFF;
     rot_left_shift(&d1, r1);
+
+    // 0b 11010000 01111111 00010100 01010000
 
     uint32_t r0 = (ctrl_wrd & CTRL_WRD_R0_MSK) >> CTRL_WRD_R0_OFF;
     rot_left_shift(&d0, r0);
 
+    // 0b 11010000 01111111 00010100 10100000
+
     tag_t tag = d3 ^ d2 ^ d1 ^ d0;
+    // 11010000 ^ 01111111 ^ 00010100 ^ 10100000 = 0b11011
+    //                                           = 0x1b
 
     return tag;
 }
