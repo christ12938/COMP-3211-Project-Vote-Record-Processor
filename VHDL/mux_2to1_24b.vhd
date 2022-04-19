@@ -1,6 +1,6 @@
 ---------------------------------------------------------------------------
--- adder_16b.vhd - 16-bit Adder Implementation
---
+-- mux_2to1_16b.vhd - 16-bit 2-to-1 Multiplexer Implementation
+-- 
 --
 -- Copyright (C) 2006 by Lih Wen Koh (lwkoh@cse.unsw.edu.au)
 -- All Rights Reserved. 
@@ -21,25 +21,32 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.STD_LOGIC_ARITH.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
-use ieee.numeric_std.all;
 
-entity adder_32b is
-    port ( alu_mode  : in  std_logic;
-           src_a     : in  std_logic_vector(31 downto 0);
-           src_b     : in  std_logic_vector(31 downto 0);
-           sum       : out std_logic_vector(31 downto 0);
-           carry_out : out std_logic );
-end adder_32b;
+entity mux_2to1_24b is
+    port ( mux_select : in  std_logic;
+           data_a     : in  std_logic_vector(23 downto 0);
+           data_b     : in  std_logic_vector(23 downto 0);
+           data_out   : out std_logic_vector(23 downto 0) );
+end mux_2to1_24b;
 
-architecture behavioural of adder_32b is
+architecture structural of mux_2to1_24b is
 
-signal sig_result : std_logic_vector(32 downto 0);
+component mux_2to1_1b is
+    port ( mux_select : in  std_logic;
+           data_a     : in  std_logic;
+           data_b     : in  std_logic;
+           data_out   : out std_logic );
+end component;
 
 begin
 
-    sig_result <= ('0' & src_a) + ('0' & src_b) when alu_mode = '0' else
-                  ('0' & src_a) - ('0' & src_b);
-    sum        <= sig_result(31 downto 0);
-    carry_out  <= sig_result(32);
+    -- this for-generate-loop replicates 16 single-bit 2-to-1 mux
+    muxes : for i in 23 downto 0 generate
+        bit_mux : mux_2to1_1b 
+        port map ( mux_select => mux_select,
+                   data_a     => data_a(i),
+                   data_b     => data_b(i),
+                   data_out   => data_out(i) );
+    end generate muxes;
     
-end behavioural;
+end structural;

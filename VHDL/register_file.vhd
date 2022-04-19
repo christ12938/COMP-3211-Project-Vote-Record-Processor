@@ -26,16 +26,17 @@ use IEEE.STD_LOGIC_UNSIGNED.ALL;
 entity register_file is
     port ( reset           : in  std_logic;
            clk             : in  std_logic;
-           control_word    : in  std_logic_vector(24 downto 0);
            start_signal    : in  std_logic;
            vote_record     : in  std_logic_vector(31 downto 0);
+           tag             : in  std_logic_vector(7 downto 0);
            read_register_a : in  std_logic_vector(3 downto 0);
            read_register_b : in  std_logic_vector(3 downto 0);
            write_enable    : in  std_logic;
            write_register  : in  std_logic_vector(3 downto 0);
            write_data      : in  std_logic_vector(31 downto 0);
            read_data_a     : out std_logic_vector(31 downto 0);
-           read_data_b     : out std_logic_vector(31 downto 0) );
+           read_data_b     : out std_logic_vector(31 downto 0);
+           busy            : out std_logic );
 end register_file;
 
 architecture behavioral of register_file is
@@ -47,9 +48,9 @@ begin
 
     mem_process : process ( reset,
                             clk,
-                            control_word,
                             start_signal,
                             vote_record,
+                            tag,
                             read_register_a,
                             read_register_b,
                             write_enable,
@@ -70,17 +71,23 @@ begin
         if (reset = '1') then
             -- initial values of the registers - reset to zeroes
             var_regfile := (others => X"00000000");
-
+            busy <= '0';
         elsif (falling_edge(clk) and write_enable = '1') then
             -- register write on the falling clock edge
             var_regfile(var_write_addr) := write_data;
+            if var_regfile(4) = X"00000001" then
+                busy <= '1';
+            else 
+                busy <= '0';
+            end if;
         end if;
 
         -- enforces value zero for register $0
         var_regfile(0) := X"00000000";
-        var_regfile(1) := "0000000" & control_word;
+        var_regfile(1) := vote_record;
         var_regfile(2) := X"0000000" & "000" & start_signal;
-        var_regfile(3) := vote_record;
+        var_regfile(3) := X"000000" & tag;
+        
         -- continuous read of the registers at location read_register_a
         -- and read_register_b
         read_data_a <= var_regfile(var_read_addr_a); 
