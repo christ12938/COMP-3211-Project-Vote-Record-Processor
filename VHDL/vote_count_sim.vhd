@@ -77,13 +77,6 @@ architecture behave of VoteCountSim is
             
             while not endfile(read_file) loop
                 
-                --r_start_signal <= '1';
-                --readline(read_file, line_v);     
-                -- turn txt to usable binary value
-                --read(line_v, line_data);
-                -- send signal to input of processor
-                --r_vote_record <= line_data;
-                --wait until r_busy = '1';
                 
                 if r_busy = '1' then
                     wait for 100ns;
@@ -98,15 +91,16 @@ architecture behave of VoteCountSim is
                     
                     -- enable send instruction
                     r_start_signal <= '1';
-
-                    
-                    wait until r_busy = '1';
+                    wait until r_busy <= '1';
+                    r_start_signal <= '0';
+                   
                     
                 end if;
             end loop;
             
             file_close(read_file);  
             
+            wait;
 --            r_reset <= '0';
        
 --            wait for 2*c_CLOCK_PERIOD ;
