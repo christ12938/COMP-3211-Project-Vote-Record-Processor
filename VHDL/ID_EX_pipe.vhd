@@ -48,6 +48,8 @@ entity ID_EX_pipe is
          mem_read_in    : in std_logic;
          shift_mode_in  : in std_logic;
          alu_mode_in    : in std_logic;
+         cmp_mode_in    : in  std_logic;
+         branch_jmp_in  : in  std_logic_vector(1 downto 0);
          mem_to_reg_out : out std_logic;
          mem_write_out  : out std_logic;
          alu_src_out    : out std_logic;
@@ -61,7 +63,9 @@ entity ID_EX_pipe is
          register_rt_out: out std_logic_vector(3 downto 0);
          mem_read_out   : out std_logic;
          shift_mode_out : out std_logic;
-         alu_mode_out   : out std_logic);
+         alu_mode_out   : out std_logic;
+         cmp_mode_out   : out std_logic;
+         branch_jmp_out : out std_logic_vector(1 downto 0));
 end ID_EX_pipe;
 
 architecture Behavioral of ID_EX_pipe is
@@ -74,6 +78,14 @@ architecture Behavioral of ID_EX_pipe is
             q   : OUT STD_LOGIC);
     end component;
 
+    component pipeline_register_2bit is
+    Port (    d   : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
+            ld  : IN STD_LOGIC; -- load/enable.
+            reset : IN STD_LOGIC; -- async. clear.
+            Clock : IN STD_LOGIC; -- clock.
+            q   : OUT STD_LOGIC_VECTOR(1 DOWNTO 0));
+    end component;
+    
     component pipeline_register_3bit is
     Port (    d   : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
             ld  : IN STD_LOGIC; -- load/enable.
@@ -196,4 +208,19 @@ begin
                reset  => reset,
                Clock => Clock,
                q => alu_mode_out);
+               
+    cmp_mode : pipeline_register_1bit
+    port map ( d   => cmp_mode_in,
+               ld      => '1',
+               reset  => reset,
+               Clock => Clock,
+               q => cmp_mode_out);
+               
+    branch_jmp : pipeline_register_2bit
+    port map ( d   => branch_jmp_in,
+               ld      => '1',
+               reset  => reset,
+               Clock => Clock,
+               q => branch_jmp_out);
+               
 end Behavioral;

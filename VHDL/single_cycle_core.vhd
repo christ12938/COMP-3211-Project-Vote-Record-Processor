@@ -222,6 +222,8 @@ component ID_EX_pipe is
          mem_read_in    : in std_logic;
          shift_mode_in  : in std_logic;
          alu_mode_in    : in std_logic;
+         cmp_mode_in    : in std_logic;
+         branch_jmp_in  : in std_logic_vector(1 downto 0);
          mem_to_reg_out : out std_logic;
          mem_write_out  : out std_logic;
          alu_src_out    : out std_logic;
@@ -235,7 +237,9 @@ component ID_EX_pipe is
          register_rt_out: out std_logic_vector(3 downto 0);
          mem_read_out   : out std_logic;
          shift_mode_out : out std_logic;
-         alu_mode_out   : out std_logic);
+         alu_mode_out   : out std_logic;
+         cmp_mode_out   : out std_logic;
+         branch_jmp_out : out std_logic_vector(1 downto 0));
 end component;
 
 component EX_DM_pipe is
@@ -291,7 +295,7 @@ component mux_2to1_24b is
 end component;
 
 component stalling_ctrl_unit is
-  Port ( stall          : in  std_logic;
+  Port ( stall_sel      : in  std_logic;
          reg_write_in   : in  std_logic;
          alu_src_in     : in  std_logic;
          mem_write_in   : in  std_logic;
@@ -300,6 +304,8 @@ component stalling_ctrl_unit is
          mem_read_in    : in  std_logic;
          shift_mode_in  : in  std_logic;
          alu_mode_in    : in  std_logic;
+         cmp_mode_in    : in  std_logic;
+         branch_jmp_in  : in  std_logic_vector(1 downto 0);
          reg_write_out  : out std_logic;
          alu_src_out    : out std_logic;
          mem_write_out  : out std_logic;
@@ -307,7 +313,9 @@ component stalling_ctrl_unit is
          ex_reg_out     : out std_logic_vector(2 downto 0);
          mem_read_out   : out std_logic;
          shift_mode_out : out std_logic;
-         alu_mode_out   : out std_logic );
+         alu_mode_out   : out std_logic;
+         cmp_mode_out   : out std_logic;
+         branch_jmp_out : out  std_logic_vector(1 downto 0));
 end component;
 
 component forwarding_unit is
@@ -405,6 +413,11 @@ signal sig_shifter_out          : std_logic_vector(31 downto 0);
 signal stall_alu_mode           : std_logic;
 signal ID_EX_alu_mode           : std_logic;
 signal sig_alu_mode             : std_logic;
+signal stall_cmp_mode           : std_logic;
+signal stall_branch_jmp         : std_logic_vector(1 downto 0);
+signal ID_EX_cmp_mode           : std_logic;
+signal ID_EX_branch_jmp         : std_logic_vector(1 downto 0);
+signal sig_stall_sel            : std_logic;
 
 begin
 
@@ -454,20 +467,20 @@ begin
               
     compare_module : comparator
     port map ( cmp_mode => sig_cmp_mode,
-               data_a   => ID_EX_read_data_1,
-               data_b   => ID_EX_read_data_2,
+               data_a   => sig_read_data_a,
+               data_b   => sig_read_data_b,
                output   => sig_compare_output); 
     
     mux_beq_bne : mux_2to1_8b
     port map ( mux_select => sig_compare_output,
                data_a     => sig_next_normal_pc,
-               data_b     => ID_EX_immediate(7 downto 0),
+               data_b     => sig_sign_extended_offset(7 downto 0),
                data_out   => sig_branch_addr); 
     
     jump_branch_mux: mux_4to1_8b
     port map ( mux_select => sig_branch_jmp,
                data_a     => sig_next_normal_pc,
-               data_b     => ID_EX_immediate(7 downto 0),
+               data_b     => sig_sign_extended_offset(7 downto 0),
                data_c     => sig_branch_addr,
                data_d     => sig_next_normal_pc,
                data_out   => sig_next_pc);
@@ -484,14 +497,16 @@ begin
                mem_write  => stall_mem_write,
                mem_to_reg => stall_mem_to_reg,
                ex_reg     => stall_ex_reg,
-               cmp_mode   => sig_cmp_mode,
-               branch_jmp => sig_branch_jmp,
+               cmp_mode   => stall_cmp_mode,
+               branch_jmp => stall_branch_jmp,
                mem_read   => stall_mem_read,
                shift_mode => stall_shift_mode,
                alu_mode   => stall_alu_mode);
 
+    sig_stall_sel <= sig_stall or sig_flush;
+    
     stalling_unit: stalling_ctrl_unit
-    port map ( stall          => sig_stall,
+    port map ( stall_sel      => sig_stall_sel,
                reg_write_in   => stall_reg_write,
                alu_src_in     => stall_alu_src,
                mem_write_in   => stall_mem_write,
@@ -500,6 +515,8 @@ begin
                mem_read_in    => stall_mem_read,
                shift_mode_in  => stall_shift_mode,
                alu_mode_in    => stall_alu_mode,
+               cmp_mode_in    => stall_cmp_mode,
+               branch_jmp_in  => stall_branch_jmp,
                reg_write_out  => ID_EX_reg_write,
                alu_src_out    => ID_EX_alu_src,
                mem_write_out  => ID_EX_mem_write,
@@ -507,7 +524,9 @@ begin
                ex_reg_out     => ID_EX_ex_reg,
                mem_read_out   => ID_EX_mem_read,
                shift_mode_out => ID_EX_shift_mode,
-               alu_mode_out   => ID_EX_alu_mode);
+               alu_mode_out   => ID_EX_alu_mode,
+               cmp_mode_out   => ID_EX_cmp_mode,
+               branch_jmp_out => ID_EX_branch_jmp);
                
     ID_EX_pipeline: ID_EX_pipe
     port map ( Clock           => clk,
@@ -526,6 +545,8 @@ begin
                mem_read_in     => ID_EX_mem_read,
                shift_mode_in   => ID_EX_shift_mode,
                alu_mode_in     => ID_EX_alu_mode,
+               cmp_mode_in     => ID_EX_cmp_mode,
+               branch_jmp_in   => ID_EX_branch_jmp,
                mem_to_reg_out  => EX_DM_mem_to_reg,
                mem_write_out   => EX_DM_mem_write,
                alu_src_out     => sig_alu_src,
@@ -539,7 +560,9 @@ begin
                register_rt_out => sig_register_rt,
                mem_read_out    => sig_mem_read,
                shift_mode_out  => sig_shift_mode,
-               alu_mode_out    => sig_alu_mode);
+               alu_mode_out    => sig_alu_mode,
+               cmp_mode_out    => sig_cmp_mode,
+               branch_jmp_out  => sig_branch_jmp);
     
     mux_reg_dst : mux_2to1_4b 
     port map ( mux_select => sig_reg_dst,
