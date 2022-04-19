@@ -195,18 +195,22 @@ def create_instr(parsed_line, constants):
                 # li $t2, 0x01345678
                 imm_nbytes = math.ceil(len(hex(imm_v)[2:]) / 2)
                 target_reg = parsed_func_args[0]
-                instrs = []
+                # addi  $t2, $zero, $zero
+                # clears out the reg
+                instrs = [
+                    (Instruction.ADD_IMM, (target_reg, 0, 0)),
+                    (Instruction.ADD_IMM, (ASM_TEMP_REG, 0, 8)),
+                ]
                 for ith_byte in range(0, imm_nbytes):
-                    instrs = instrs + [
-                        # addi  $t2, $zero, 0x01
-                        (Instruction.ADD_IMM, (target_reg, 0, (imm_v >> 8*ith_byte) & 0xFF)),
-                        # addi  $at, $zero, (32 - 8*(ith_byte+1))
-                        (Instruction.ADD_IMM, (ASM_TEMP_REG, 0, 8*ith_byte)),
-                        # sllv  $at, $t2, $at
-                        (Instruction.LEFT_SHIFT_LOGICAL, (ASM_TEMP_REG, target_reg, ASM_TEMP_REG)),
-                        # add   $t2, $t2, $at
-                        (Instruction.ADD, (target_reg, target_reg, ASM_TEMP_REG)),
-                    ]
+                    instrs.append(
+                        # addi  $t2, $t2, 0x01
+                        (Instruction.ADD_IMM, (target_reg, target_reg, (imm_v >> (24 - 8*ith_byte)) & 0xFF))
+                    )
+                    if ith_byte < (imm_nbytes - 1):
+                        instrs.append(
+                            # sllv  $t2, $t2, $at
+                            (Instruction.LEFT_SHIFT_LOGICAL, (target_reg, target_reg, ASM_TEMP_REG))
+                        )
 
                 # can only return since we know that the immediate value
                 # is always last for the li and addi instr
