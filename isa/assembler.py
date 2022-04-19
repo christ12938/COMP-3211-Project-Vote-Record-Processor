@@ -107,7 +107,6 @@ def strip(line):
     return line.strip()
 
 def encode_instr(instruction):
-    print('encode_instr', instruction)
     instr_func, func_args = instruction
 
     if instr_func == Instruction.NOP:
@@ -158,7 +157,6 @@ def encode_instr(instruction):
 def create_instr(parsed_line, constants):
     func, func_args = parsed_line
     parsed_func_args = []
-    print(parsed_line)
 
     def resolve_reg(reg_str):
         if reg_str == "$zero":
@@ -193,7 +191,6 @@ def create_instr(parsed_line, constants):
         # is immediate value?
         elif func_arg in constants or re.match(r"^(0x|0b|0o|[0-9])", func_arg):
             imm_v = constants[func_arg] if func_arg in constants else int(func_arg, 0)
-            print(imm_v)
             if imm_v > (2**12 - 1) and (func == Instruction.LOAD_IMM or func == Instruction.ADD_IMM):
                 # li $t2, 0x01345678
                 imm_nbytes = math.ceil(len(hex(imm_v)[2:]) / 2)
