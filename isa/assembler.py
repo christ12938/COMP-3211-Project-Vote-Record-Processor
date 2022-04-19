@@ -348,7 +348,7 @@ def emit_instrs(lines):
         bit24, debug_str = encode_instr((instr_func, res_func_args))
         line_details = () if len(line_info) == 0 else (line_info[0], line_info[1])
         comment = ' -- {0: <3}'.format(line_details[0]) + f' {line_details[1]}' if len(line_details) > 0 else ''
-        instr_vhdl = 'var_insn_mem(' + '{0: <2}'.format(instr_addr) + ') := ' + 'x"{0:0>6}"'.format(hex(bit24)[2:]).upper() + comment
+        instr_vhdl = 'var_insn_mem(' + '{0: <2}'.format(instr_addr) + ') := ' + 'x"{0:0>6}"'.format(hex(bit24)[2:]).upper() + f';{comment}'
         yield (bit24, instr_vhdl, debug_str, (instr_func, res_func_args, line_details))
 
 def main():
