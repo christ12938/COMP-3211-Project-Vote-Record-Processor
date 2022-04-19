@@ -325,8 +325,12 @@ component forwarding_unit is
          EX_DM_Rd       : in std_logic_vector(3 downto 0);
          ID_EX_Rs       : in std_logic_vector(3 downto 0);
          ID_EX_Rt       : in std_logic_vector(3 downto 0);
+         ID_EX_mem_write: in std_logic;
+         EX_DM_mem_write: in std_logic;
          alu_mux_1      : out std_logic;
-         alu_mux_2      : out std_logic);
+         alu_mux_2      : out std_logic;
+         dm_data_mux    : out std_logic;
+         ex_data_mux    : out std_logic);
 end component;
 
 component logical_shifter is
@@ -418,6 +422,10 @@ signal stall_branch_jmp         : std_logic_vector(1 downto 0);
 signal ID_EX_cmp_mode           : std_logic;
 signal ID_EX_branch_jmp         : std_logic_vector(1 downto 0);
 signal sig_stall_sel            : std_logic;
+signal sig_dm_data_mux          : std_logic;
+signal sig_ex_data_mux          : std_logic;
+signal sig_dm_write_data_mux    : std_logic_vector(31 downto 0);
+signal EX_DM_dm_write_data      : std_logic_vector(31 downto 0);
 
 begin
 
@@ -617,9 +625,25 @@ begin
                  EX_DM_Rd        => DM_WB_reg_dst_res,
                  ID_EX_Rs        => sig_register_rs,
                  ID_EX_Rt        => sig_register_rt,
+                 ID_EX_mem_write => EX_DM_mem_write,
+                 EX_DM_mem_write => sig_mem_write,
                  alu_mux_1       => sig_alu_mux_1,
-                 alu_mux_2       => sig_alu_mux_2);
+                 alu_mux_2       => sig_alu_mux_2,
+                 dm_data_mux     => sig_dm_data_mux,
+                 ex_data_mux     => sig_ex_data_mux);
 
+    dm_data_mux : mux_2to1_32b 
+    port map ( mux_select => sig_dm_data_mux,
+               data_a     => sig_dm_write_data_mux,
+               data_b     => sig_write_data,
+               data_out   => sig_dm_write_data);
+    
+    ex_data_mux : mux_2to1_32b 
+    port map ( mux_select => sig_ex_data_mux,
+               data_a     => sig_read_data_b,
+               data_b     => sig_write_data,
+               data_out   => EX_DM_dm_write_data);
+               
     EX_DM_pipeline: EX_DM_pipe
     port map (  Clock           => clk,
                 reset           => reset,       
@@ -629,14 +653,14 @@ begin
                 reg_dst_res_in  => EX_DM_reg_dst_res,
                 ex_result_in    => EX_DM_ex_reg_result,
                 address_in      => EX_DM_alu_result(9 downto 0),
-                write_data_in   => sig_read_data_b,
+                write_data_in   => EX_DM_dm_write_data,
                 mem_to_reg_out  => DM_WB_mem_to_reg,
                 mem_write_out   => sig_mem_write,
                 reg_write_out   => DM_WB_reg_write,
                 reg_dst_res_out => DM_WB_reg_dst_res,
                 ex_result_out   => DM_WB_ex_result,
                 address_out     => sig_dm_addr,
-                write_data_out  => sig_dm_write_data);
+                write_data_out  => sig_dm_write_data_mux);
 
     data_mem : data_memory 
     port map ( reset        => reset,

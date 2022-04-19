@@ -65,8 +65,8 @@ begin
             var_insn_mem := (others => X"000000");
             --105001
             
-            var_insn_mem(0)  := X"000000";
-            var_insn_mem(1)  := X"000000";
+            var_insn_mem(0)  := X"A050AA";
+            var_insn_mem(1)  := X"205000";
             var_insn_mem(2)  := X"000000";
             var_insn_mem(3)  := X"000000";
             var_insn_mem(4)  := X"000000";
