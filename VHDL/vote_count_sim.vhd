@@ -14,14 +14,14 @@ architecture behave of VoteCountSim is
  
     -- 1 GHz = 2 nanoseconds period
     constant c_CLOCK_PERIOD : time      := 2 ns;
-    constant record_source  : string    := "voterecords.txt";
-    constant control_word   : string    := "1100001000010100101000110";
+    constant record_source      : string                        := "voterecords.txt";
+    constant control_word_source: std_logic_vector(24 downto 0) := "1100001000010100101000110";
 
 
     signal r_CLOCK     : std_logic := '0';
     signal r_reset     : std_logic := '0';
     signal r_start_signal: std_logic := '0';
-    signal r_control_word: std_logic_vector(24 downto 0) := (others => '0');
+    signal r_control_word: std_logic_vector(24 downto 0) := control_word_source;
     signal r_vote_record : std_logic_vector(31 downto 0) := (others => '0');
  
 
@@ -62,6 +62,7 @@ architecture behave of VoteCountSim is
             
         begin
             r_reset <= '1';
+            wait for 20ns;
             r_reset <= '0';
             
             -- directly load control word from here
