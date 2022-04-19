@@ -174,9 +174,8 @@ update_vote_count:
 	#	$v0 = tag_t
 compute_tag:
 	lw		$t0, ctrl_word
-	#swap    $t1, $a0, $t0
-	#rolb    $t1, $t1, $t0
-	#xorb    $v0, $t1, $t0
+	swap    $t1, $a0, $t0
+	rolb    $t1, $t1, $t0
+	xorb    $v0, $t1, $t0
 
-	li		$v0, TEST_TAG_PRIME
 	j		compute_tag_rtn
