@@ -329,6 +329,8 @@ component forwarding_unit is
          EX_DM_mem_write: in std_logic;
          alu_mux_1      : out std_logic;
          alu_mux_2      : out std_logic;
+         alu_mux_3      : out std_logic;
+         alu_mux_4      : out std_logic;
          dm_data_mux    : out std_logic;
          ex_data_mux    : out std_logic);
 end component;
@@ -426,6 +428,10 @@ signal sig_dm_data_mux          : std_logic;
 signal sig_ex_data_mux          : std_logic;
 signal sig_dm_write_data_mux    : std_logic_vector(31 downto 0);
 signal EX_DM_dm_write_data      : std_logic_vector(31 downto 0);
+signal sig_alu_src_3            : std_logic_vector(31 downto 0);
+signal sig_alu_src_4            : std_logic_vector(31 downto 0);
+signal sig_alu_mux_3            : std_logic;
+signal sig_alu_mux_4            : std_logic;
 
 begin
 
@@ -603,14 +609,26 @@ begin
     port map ( mux_select => sig_alu_mux_1,
                data_a     => forwarding_read_data_1,
                data_b     => sig_write_data,
-               data_out   => sig_read_data_a);
+               data_out   => sig_alu_src_3);
        
     mux_alu_src_2: mux_2to1_32b
     port map ( mux_select => sig_alu_mux_2,
                data_a     => forwarding_read_data_2,
                data_b     => sig_write_data,
+               data_out   => sig_alu_src_4);
+           
+    mux_alu_src_3: mux_2to1_32b
+    port map ( mux_select => sig_alu_mux_3,
+               data_a     => sig_alu_src_3,
+               data_b     => DM_WB_ex_result,
+               data_out   => sig_read_data_a);
+
+    mux_alu_src_4: mux_2to1_32b
+    port map ( mux_select => sig_alu_mux_4,
+               data_a     => sig_alu_src_4,
+               data_b     => DM_WB_ex_result,
                data_out   => sig_read_data_b);
-                       
+                                      
     alu : adder_32b 
     port map ( alu_mode  => sig_alu_mode,
                src_a     => sig_read_data_a,
@@ -629,6 +647,8 @@ begin
                  EX_DM_mem_write => sig_mem_write,
                  alu_mux_1       => sig_alu_mux_1,
                  alu_mux_2       => sig_alu_mux_2,
+                 alu_mux_3       => sig_alu_mux_3,
+                 alu_mux_4       => sig_alu_mux_4,
                  dm_data_mux     => sig_dm_data_mux,
                  ex_data_mux     => sig_ex_data_mux);
 
