@@ -13,15 +13,15 @@ architecture behave of VoteCountSim is
  
     -- 1 GHz = 2 nanoseconds period
     constant c_CLOCK_PERIOD : time      := 2 ns;
-    constant record_source  : string    := "records.txt";
-    constant control_word   : string    := "";
+    constant record_source  : string    := "voterecords.txt";
+    constant control_word   : string    := "1100001000010100101000110";
 
 
     signal r_CLOCK     : std_logic := '0';
     signal r_reset     : std_logic := '0';
     signal r_start_signal: std_logic := '0';
-    signal r_control_word: std_logic_vector;
-    signal r_vote_record : std_logic_vector;
+    signal r_control_word: std_logic_vector(24 downto 0) := (others => '0');
+    signal r_vote_record : std_logic_vector(31 downto 0) := (others => '0');
  
 
     -- Component declaration for the Unit Under Test (UUT)
@@ -57,13 +57,23 @@ architecture behave of VoteCountSim is
             variable line_v : line;
             file read_file : text;
             variable busy : boolean;
-            variable line_data: integer;
+            variable line_data: integer; 
+            
         begin
+            r_reset <= '1';
+            r_reset <= '0';
+            
             -- directly load control word from here
+            -- none
+            
             -- read file
             file_open(read_file, record_source, read_mode);
+            
             while not endfile(read_file) loop
                 busy := false;
+                
+                r_start_signal <= '0';
+                
                 if busy then
                     wait for 100ns;
                 else
@@ -78,10 +88,11 @@ architecture behave of VoteCountSim is
                     -- enable send instruction
                     r_start_signal <= '1';
                     
-                    wait for 10ns ;
+                    wait for 10ns;
                     
                     -- disable send instruction
                     r_start_signal <= '0';
+                    
                 end if;
             end loop;
             
