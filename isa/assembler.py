@@ -17,9 +17,9 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 
-REG_TYPE_2_MAX_NUM = { "t": 7, "s": 2, "a": 4, "v": 1 }
-REG_TYPE_2_OFFSET = { "t": 1, "s": 9, "a": 11, "v": 15 }
-ASM_TEMP_REG = 8
+REG_TYPE_2_MAX_NUM = { "t": 5, "s": 0, "a": 3, "v": 1 }
+REG_TYPE_2_OFFSET = { "t": 5, "s": 11, "a": 11, "v": 14 }
+ASM_TEMP_REG = 15
 
 class Instruction(Enum):
     ADD_IMM = "addi"
@@ -65,12 +65,12 @@ J_TYPE_INSTRS = set([
 ])
 
 INSTR_2_OPCODE = {
-    Instruction.ADD_IMM: 0b1101,
+    Instruction.ADD_IMM: 0b1010,
     Instruction.ADD: 0b0110,
     Instruction.NOP: 0b0000,
-    Instruction.RIGHT_SHIFT_LOGICAL: 0b1011,
-    Instruction.LEFT_SHIFT_LOGICAL: 0b1100,
-    Instruction.SUB: 0b1010,
+    Instruction.RIGHT_SHIFT_LOGICAL: 0b1100,
+    Instruction.LEFT_SHIFT_LOGICAL: 0b1011,
+    Instruction.SUB: 0b1101,
     Instruction.LOAD_WORD: 0b0001,
     Instruction.SWAP: 0b0011,
     Instruction.STORE_WORD: 0b0010,
@@ -80,7 +80,6 @@ INSTR_2_OPCODE = {
     Instruction.BRANCH_NOT_EQUAL: 0b1000,
     Instruction.BRANCH_EQUAL: 0b1001,
 }
-
 
 class AssemblyDataType(Enum):
     INSTRUCTION = 0
@@ -108,6 +107,7 @@ def strip(line):
     return line.strip()
 
 def encode_instr(instruction):
+    print('encode_instr', instruction)
     instr_func, func_args = instruction
 
     if instr_func == Instruction.NOP:
@@ -158,10 +158,19 @@ def encode_instr(instruction):
 def create_instr(parsed_line, constants):
     func, func_args = parsed_line
     parsed_func_args = []
+    print(parsed_line)
 
     def resolve_reg(reg_str):
         if reg_str == "$zero":
             return 0
+        elif reg_str == "$rec":
+            return 1
+        elif reg_str == "$send":
+            return 2
+        elif reg_str == "$tag":
+            return 3
+        elif reg_str == "$busy":
+            return 4
         else:
             res = re.match(r"\$(t|s|a|v)([0-9]+)", reg_str)
             if not res:
@@ -182,8 +191,9 @@ def create_instr(parsed_line, constants):
         if func_arg.startswith("$"):
             parsed_func_args.append(resolve_reg(func_arg))
         # is immediate value?
-        elif re.match(r"^(0x|0b|0o|[0-9])", func_arg):
-            imm_v = int(func_arg, 0)
+        elif func_arg in constants or re.match(r"^(0x|0b|0o|[0-9])", func_arg):
+            imm_v = constants[func_arg] if func_arg in constants else int(func_arg, 0)
+            print(imm_v)
             if imm_v > (2**12 - 1) and (func == Instruction.LOAD_IMM or func == Instruction.ADD_IMM):
                 # li $t2, 0x01345678
                 imm_nbytes = math.ceil(len(hex(imm_v)[2:]) / 2)
@@ -339,8 +349,10 @@ def emit_instrs(lines):
         instr_func, func_args, line_info = instruction
         res_func_args = resolve_labels(func_args)
         bit24, debug_str = encode_instr((instr_func, res_func_args))
-        instr_vhdl = 'var_insn_mem(' + '{0: <2}'.format(instr_addr) + ') := ' + 'x"{0:0>6}"'.format(hex(bit24)[2:]).upper()
-        yield (bit24, instr_vhdl, debug_str, (instr_func, res_func_args, line_info))
+        line_details = () if len(line_info) == 0 else (line_info[0], line_info[1])
+        comment = ' -- {0: <3}'.format(line_details[0]) + f' {line_details[1]}' if len(line_details) > 0 else ''
+        instr_vhdl = 'var_insn_mem(' + '{0: <2}'.format(instr_addr) + ') := ' + 'x"{0:0>6}"'.format(hex(bit24)[2:]).upper() + comment
+        yield (bit24, instr_vhdl, debug_str, (instr_func, res_func_args, line_details))
 
 def main():
     if len(sys.argv) <= 1:
@@ -364,8 +376,7 @@ def main():
 
         for instr_i, (instr_bit24, instr_vhdl, instr_debug_str, instr_desc) in enumerate(emit_instrs([clean_up_line(l) for l in lines])):
             if debug_flag:
-                line_details = () if len(instr_desc[2]) == 0 else (instr_desc[2][0], instr_desc[2][1].replace('\t', '  '))
-                desc = (instr_desc[0].name, instr_desc[1], line_details)
+                desc = (instr_desc[0].name, instr_desc[1], instr_desc[2])
                 print('{0: <3}'.format(instr_i), '{0: <8}'.format(hex(instr_bit24)), instr_debug_str, desc)
 
             if output_opt:
