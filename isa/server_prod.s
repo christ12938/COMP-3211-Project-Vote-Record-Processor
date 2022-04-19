@@ -38,12 +38,11 @@ main_while_1:
 											# while (1)
 main_if_send_eq_1:
 	li		$t0, 1
-	bne		$s1, $t0, main_if_send_eq_1_f	# if (send == 1) {
 	bne		$send, $t0, main_if_send_eq_1_f	# if (send == 1) {
 	move	$busy, $t0						#   *busy_port = 1;
+
 	move	$a0, $rec						#   vote_record_t rec = *rec_port;
 	move	$a1, $tag						#   tag_t tag = *tag_port;
-
 	j		process_record					#   process_record(rec, tag);
 process_record_rtn:
 
