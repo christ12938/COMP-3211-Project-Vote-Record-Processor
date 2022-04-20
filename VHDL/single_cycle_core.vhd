@@ -252,14 +252,18 @@ component EX_DM_pipe is
          reg_dst_res_in : in std_logic_vector(3 downto 0);
          ex_result_in   : in std_logic_vector(31 downto 0);
          address_in     : in std_logic_vector(9 downto 0);
-         write_data_in  : in std_logic_vector(31 downto 0);         
+         write_data_in  : in std_logic_vector(31 downto 0);
+         compare_output_in : in std_logic;
+         branch_jmp_in  : in std_logic_vector(1 downto 0);         
          mem_to_reg_out : out std_logic;
          mem_write_out  : out std_logic;
          reg_write_out  : out std_logic;
          reg_dst_res_out: out std_logic_vector(3 downto 0);
          ex_result_out  : out std_logic_vector(31 downto 0);
          address_out    : out std_logic_vector(9 downto 0);
-         write_data_out : out std_logic_vector(31 downto 0));
+         write_data_out : out std_logic_vector(31 downto 0);
+         compare_output_out : out std_logic;
+         branch_jmp_out  : out std_logic_vector(1 downto 0));
 end component;
 
 component DM_WB_pipe is
@@ -278,8 +282,10 @@ component DM_WB_pipe is
 end component;
 
 component hazard_detection_unit is
-  Port ( compare_output : in  std_logic;
-         branch_jmp     : in  std_logic_vector(1 downto 0);
+  Port ( ID_EX_compare_output : in  std_logic;
+         ID_EX_branch_jmp     : in  std_logic_vector(1 downto 0);
+         EX_DM_compare_output : in  std_logic;
+         EX_DM_branch_jmp     : in  std_logic_vector(1 downto 0);
          ID_EX_mem_read : in std_logic;
          ID_EX_reg_rt   : in std_logic_vector(3 downto 0);
          IF_ID_reg_rs   : in std_logic_vector(3 downto 0);
@@ -433,6 +439,8 @@ signal sig_alu_src_3            : std_logic_vector(31 downto 0);
 signal sig_alu_src_4            : std_logic_vector(31 downto 0);
 signal sig_alu_mux_3            : std_logic;
 signal sig_alu_mux_4            : std_logic;
+signal EX_DM_compare_output_out : std_logic;
+signal EX_DM_branch_jmp_out     : std_logic_vector(1 downto 0);
 
 begin
 
@@ -463,9 +471,11 @@ begin
                data_b     => sig_insn,
                data_out   => IF_ID_instruction);
 
-    harzard_detection: hazard_detection_unit
-    port map ( compare_output  => sig_compare_output,
-               branch_jmp      => sig_branch_jmp,
+    hazard_detection: hazard_detection_unit
+    port map ( ID_EX_compare_output  => sig_compare_output,
+               ID_EX_branch_jmp      => sig_branch_jmp,
+               EX_DM_compare_output  => EX_DM_compare_output_out,
+               EX_DM_branch_jmp      => EX_DM_branch_jmp_out,
                ID_EX_mem_read  => sig_mem_read,
                ID_EX_reg_rt    => sig_register_rt,
                IF_ID_reg_rs    => sig_insn(19 downto 16),
@@ -675,13 +685,17 @@ begin
                 ex_result_in    => EX_DM_ex_reg_result,
                 address_in      => EX_DM_alu_result(9 downto 0),
                 write_data_in   => EX_DM_dm_write_data,
+                compare_output_in => sig_compare_output,
+                branch_jmp_in   => sig_branch_jmp,
                 mem_to_reg_out  => DM_WB_mem_to_reg,
                 mem_write_out   => sig_mem_write,
                 reg_write_out   => DM_WB_reg_write,
                 reg_dst_res_out => DM_WB_reg_dst_res,
                 ex_result_out   => DM_WB_ex_result,
                 address_out     => sig_dm_addr,
-                write_data_out  => sig_dm_write_data_mux);
+                write_data_out  => sig_dm_write_data_mux,
+                compare_output_out    => EX_DM_compare_output_out,
+                branch_jmp_out  => EX_DM_branch_jmp_out);
 
     data_mem : data_memory 
     port map ( reset        => reset,

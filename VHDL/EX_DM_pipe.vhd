@@ -40,14 +40,18 @@ entity EX_DM_pipe is
          reg_dst_res_in : in std_logic_vector(3 downto 0);
          ex_result_in   : in std_logic_vector(31 downto 0);
          address_in     : in std_logic_vector(9 downto 0);
-         write_data_in  : in std_logic_vector(31 downto 0);         
+         write_data_in  : in std_logic_vector(31 downto 0);
+         compare_output_in : in std_logic;
+         branch_jmp_in  : in std_logic_vector(1 downto 0);         
          mem_to_reg_out : out std_logic;
          mem_write_out  : out std_logic;
          reg_write_out  : out std_logic;
          reg_dst_res_out: out std_logic_vector(3 downto 0);
          ex_result_out  : out std_logic_vector(31 downto 0);
          address_out    : out std_logic_vector(9 downto 0);
-         write_data_out : out std_logic_vector(31 downto 0));
+         write_data_out : out std_logic_vector(31 downto 0);
+         compare_output_out : out std_logic;
+         branch_jmp_out  : out std_logic_vector(1 downto 0));
 end EX_DM_pipe;
 
 architecture Behavioral of EX_DM_pipe is
@@ -58,6 +62,14 @@ architecture Behavioral of EX_DM_pipe is
             reset : IN STD_LOGIC; -- async. clear.
             Clock : IN STD_LOGIC; -- clock.
             q   : OUT STD_LOGIC);
+    end component;
+    
+    component pipeline_register_2bit is
+        Port (    d   : IN STD_LOGIC_VECTOR(1 DOWNTO 0);
+            ld  : IN STD_LOGIC; -- load/enable.
+            reset : IN STD_LOGIC; -- async. clear.
+            Clock : IN STD_LOGIC; -- clock.
+            q   : OUT STD_LOGIC_VECTOR(1 DOWNTO 0));
     end component;
     
     component pipeline_register_4bit is
@@ -133,6 +145,20 @@ begin
                ld      => '1',
                reset  => reset,
                Clock => Clock,
-               q => write_data_out);        
+               q => write_data_out);
+                   
+    compare_output : pipeline_register_1bit
+    port map ( d   => compare_output_in,
+               ld      => '1',
+               reset  => reset,
+               Clock => Clock,
+               q => compare_output_out); 
+                          
+    branch_jmp: pipeline_register_2bit
+    port map ( d   => branch_jmp_in,
+               ld      => '1',
+               reset  => reset,
+               Clock => Clock,
+               q => branch_jmp_out);   
                   
 end Behavioral;

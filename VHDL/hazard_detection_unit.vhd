@@ -32,8 +32,10 @@ use IEEE.STD_LOGIC_1164.ALL;
 --use UNISIM.VComponents.all;
 
 entity hazard_detection_unit is
-  Port ( compare_output : in  std_logic;
-         branch_jmp     : in  std_logic_vector(1 downto 0);
+  Port ( ID_EX_compare_output : in  std_logic;
+         ID_EX_branch_jmp     : in  std_logic_vector(1 downto 0);
+         EX_DM_compare_output : in  std_logic;
+         EX_DM_branch_jmp     : in  std_logic_vector(1 downto 0);
          ID_EX_mem_read : in std_logic;
          ID_EX_reg_rt   : in std_logic_vector(3 downto 0);
          IF_ID_reg_rs   : in std_logic_vector(3 downto 0);
@@ -46,7 +48,8 @@ architecture Behavioral of hazard_detection_unit is
 
 begin
 
-    flush <= '1' when branch_jmp = "01" or (compare_output = '1' and branch_jmp = "10") else
+    flush <= '1' when (ID_EX_branch_jmp = "01" or (ID_EX_compare_output = '1' and ID_EX_branch_jmp = "10")) 
+                        or (EX_DM_branch_jmp = "01" or (EX_DM_compare_output = '1' and EX_DM_branch_jmp = "10")) else
              '0';
              
     stall <= '1' when ID_EX_mem_read = '1' and (ID_EX_reg_rt = IF_ID_reg_rs or ID_EX_reg_rt = IF_ID_reg_rt) else
