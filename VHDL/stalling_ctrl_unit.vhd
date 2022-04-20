@@ -40,7 +40,7 @@ entity stalling_ctrl_unit is
          ex_reg_in      : in  std_logic_vector(2 downto 0);
          mem_read_in    : in  std_logic;
          shift_mode_in  : in  std_logic;
-         alu_mode_in    : in  std_logic;
+         alu_mode_in    : in  std_logic_vector(1 downto 0);
          cmp_mode_in    : in  std_logic;
          branch_jmp_in  : in  std_logic_vector(1 downto 0);
          reg_write_out  : out std_logic;
@@ -50,9 +50,9 @@ entity stalling_ctrl_unit is
          ex_reg_out     : out std_logic_vector(2 downto 0);
          mem_read_out   : out std_logic;
          shift_mode_out : out std_logic;
-         alu_mode_out   : out std_logic;
+         alu_mode_out   : out std_logic_vector(1 downto 0);
          cmp_mode_out   : out std_logic;
-         branch_jmp_out : out  std_logic_vector(1 downto 0));     
+         branch_jmp_out : out std_logic_vector(1 downto 0));     
 end stalling_ctrl_unit;
 
 architecture Behavioral of stalling_ctrl_unit is
@@ -74,7 +74,7 @@ begin
     shift_mode_out <= shift_mode_in when stall_sel = '0' else
                      '0';    
     alu_mode_out   <= alu_mode_in when stall_sel = '0' else
-                     '0'; 
+                     "00"; 
     cmp_mode_out <= cmp_mode_in when stall_sel = '0' else
                      '0';          
     branch_jmp_out <= branch_jmp_in when stall_sel = '0' else

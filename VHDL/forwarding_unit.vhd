@@ -42,6 +42,8 @@ entity forwarding_unit is
          EX_DM_mem_write: in std_logic;
          alu_mux_1      : out std_logic;
          alu_mux_2      : out std_logic;
+         alu_mux_3      : out std_logic;
+         alu_mux_4      : out std_logic;
          dm_data_mux    : out std_logic;
          ex_data_mux    : out std_logic);
 end forwarding_unit;
@@ -49,10 +51,15 @@ end forwarding_unit;
 architecture Behavioral of forwarding_unit is
 
 begin
+
      alu_mux_1 <= '1' when (DM_WB_reg_write = '1' and DM_WB_Rd /= x"0" and DM_WB_Rd = ID_EX_Rs and (EX_DM_reg_write = '0' or EX_DM_Rd /= ID_EX_Rs)) else
                   '0';       
      alu_mux_2 <= '1' when (DM_WB_reg_write = '1' and DM_WB_Rd /= x"0" and DM_WB_Rd = ID_EX_Rt and (EX_DM_reg_write = '0' or EX_DM_Rd /= ID_EX_Rt)) else
                   '0';
+     alu_mux_3 <= '1' when (EX_DM_reg_write = '1' and EX_DM_Rd /= x"0" and EX_DM_Rd = ID_EX_Rs) else
+                  '0';
+     alu_mux_4 <= '1' when (EX_DM_reg_write = '1' and EX_DM_Rd /= x"0" and EX_DM_Rd = ID_EX_Rt) else
+                  '0';             
      dm_data_mux <= '1' when (DM_WB_reg_write = '1' and DM_WB_Rd /= x"0" and EX_DM_mem_write = '1' and DM_WB_Rd = EX_DM_Rd) else
                     '0';
      ex_data_mux <= '1' when (DM_WB_reg_write = '1' and DM_WB_Rd /= x"0" and ID_EX_mem_write = '1' and DM_WB_Rd = ID_EX_Rt) else

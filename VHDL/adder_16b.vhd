@@ -19,12 +19,11 @@
 ---------------------------------------------------------------------------
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.STD_LOGIC_ARITH.ALL;
 use IEEE.STD_LOGIC_UNSIGNED.ALL;
 use ieee.numeric_std.all;
 
 entity adder_32b is
-    port ( alu_mode  : in  std_logic;
+    port ( alu_mode  : in  std_logic_vector(1 downto 0) ;
            src_a     : in  std_logic_vector(31 downto 0);
            src_b     : in  std_logic_vector(31 downto 0);
            sum       : out std_logic_vector(31 downto 0);
@@ -34,11 +33,15 @@ end adder_32b;
 architecture behavioural of adder_32b is
 
 signal sig_result : std_logic_vector(32 downto 0);
+signal mul_result : std_logic_vector(64 downto 0);
 
 begin
+    mul_result <= std_logic_vector(to_unsigned(to_integer(unsigned(src_a)) * to_integer(unsigned(src_b)), 65));
+    
+    sig_result <= ('0' & src_a) - ('0' & src_b) when alu_mode = "01" else
 
-    sig_result <= ('0' & src_a) + ('0' & src_b) when alu_mode = '0' else
-                  ('0' & src_a) - ('0' & src_b);
+                  mul_result(32 downto 0) when alu_mode = "10" else
+                  ('0' & src_a) + ('0' & src_b);
     sum        <= sig_result(31 downto 0);
     carry_out  <= sig_result(32);
     

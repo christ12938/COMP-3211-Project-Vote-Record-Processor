@@ -47,7 +47,7 @@ entity ID_EX_pipe is
          register_rt_in : in std_logic_vector(3 downto 0);
          mem_read_in    : in std_logic;
          shift_mode_in  : in std_logic;
-         alu_mode_in    : in std_logic;
+         alu_mode_in    : in std_logic_vector(1 downto 0);
          cmp_mode_in    : in  std_logic;
          branch_jmp_in  : in  std_logic_vector(1 downto 0);
          mem_to_reg_out : out std_logic;
@@ -63,7 +63,7 @@ entity ID_EX_pipe is
          register_rt_out: out std_logic_vector(3 downto 0);
          mem_read_out   : out std_logic;
          shift_mode_out : out std_logic;
-         alu_mode_out   : out std_logic;
+         alu_mode_out   : out std_logic_vector(1 downto 0);
          cmp_mode_out   : out std_logic;
          branch_jmp_out : out std_logic_vector(1 downto 0));
 end ID_EX_pipe;
@@ -202,7 +202,7 @@ begin
                Clock => Clock,
                q => shift_mode_out);
                
-    alu_mode : pipeline_register_1bit
+    alu_mode : pipeline_register_2bit
     port map ( d   => alu_mode_in,
                ld      => '1',
                reset  => reset,

@@ -75,11 +75,6 @@ begin
         elsif (falling_edge(clk) and write_enable = '1') then
             -- register write on the falling clock edge
             var_regfile(var_write_addr) := write_data;
-            if var_regfile(4) = X"00000001" then
-                busy <= '1';
-            else 
-                busy <= '0';
-            end if;
         end if;
 
         -- enforces value zero for register $0
@@ -87,9 +82,9 @@ begin
         var_regfile(1) := vote_record;
         var_regfile(2) := X"0000000" & "000" & start_signal;
         var_regfile(3) := X"000000" & tag;
-        
         -- continuous read of the registers at location read_register_a
         -- and read_register_b
+        busy        <= var_regfile(4)(0);
         read_data_a <= var_regfile(var_read_addr_a); 
         read_data_b <= var_regfile(var_read_addr_b);
 

@@ -32,7 +32,8 @@ use IEEE.NUMERIC_STD.ALL;
 --use UNISIM.VComponents.all;
 
 entity swapper is
-  Port ( control_word   : in std_logic_vector(12 downto 0);
+  Port ( swapper_start  : in std_logic_vector(2 downto 0);
+         control_word   : in std_logic_vector(12 downto 0);
          vote_record    : in std_logic_vector(31 downto 0);
          data_out       : out std_logic_vector(31 downto 0));
 end swapper;
@@ -67,7 +68,7 @@ begin
     
     -- load vote record
     data <= unsigned(vote_record);
-    
+
     block1 <= unsigned(
         vote_record(
             ((TO_INTEGER(b1) + 1) * 8 + 1) 
@@ -124,6 +125,7 @@ begin
     -- (TO_INTEGER(b1) * 8 + TO_INTEGER(p1) - TO_INTEGER(s) + 1)
     -- <
     -- TO_INTEGER(b1) * 8
+
     
     -- assign to data out
     data_out <= std_logic_vector(data);

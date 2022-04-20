@@ -65,22 +65,67 @@ begin
             var_insn_mem := (others => X"000000");
             --105001
             
-            var_insn_mem(0)  := X"A050AA";
-            var_insn_mem(1)  := X"2053FF";
-            var_insn_mem(2)  := X"000000";
-            var_insn_mem(3)  := X"000000";
-            var_insn_mem(4)  := X"000000";
-            var_insn_mem(5)  := X"000000";
-            var_insn_mem(6)  := X"000000";
-            var_insn_mem(7)  := X"000000";
-            var_insn_mem(8)  := X"000000";
-            var_insn_mem(9)  := X"000000";
-            var_insn_mem(10) := X"000000";
-            var_insn_mem(11) := X"000000";
-            var_insn_mem(12) := X"000000";
-            var_insn_mem(13) := X"000000";
-            var_insn_mem(14) := X"000000";
-            var_insn_mem(15) := X"000000";
+            var_insn_mem(0 ) := X"A0500C"; -- 27  li        $t0, CTRL_WORD
+            var_insn_mem(1 ) := X"A0F184"; -- 27  li        $t0, CTRL_WORD
+            var_insn_mem(2 ) := X"BF500F"; -- 27  li        $t0, CTRL_WORD
+            var_insn_mem(3 ) := X"AFF294"; -- 27  li        $t0, CTRL_WORD
+            var_insn_mem(4 ) := X"A05004"; -- 27  li        $t0, CTRL_WORD
+            var_insn_mem(5 ) := X"BF500F"; -- 27  li        $t0, CTRL_WORD
+            var_insn_mem(6 ) := X"AF5009"; -- 27  li        $t0, CTRL_WORD
+            var_insn_mem(7 ) := X"205210"; -- 27  sw        $t0, CTRL_WORD
+            var_insn_mem(8) := X"A05001"; -- 39  li		$t0, 1 - C
+            var_insn_mem(9) := X"852008"; -- 40  bne		$send, $t0, main_if_send_eq_1_f
+            var_insn_mem(10) := X"000000"; -- 176 swap    $t1, $a0, $t0
+            var_insn_mem(11) := X"000000"; -- 176 swap    $t1, $a0, $t0
+            var_insn_mem(12) := X"000000"; -- 176 swap    $t1, $a0, $t0
+            var_insn_mem(13) := X"A54000"; -- 41  move	$busy, $t0
+            var_insn_mem(14) := X"A1B000"; -- 43  move	$a0, $rec
+            var_insn_mem(15) := X"A3C000"; -- 44  move	$a1, $tag
+            var_insn_mem(16) := X"105210"; -- 175 lw	  $t0, ctrl_word
+            var_insn_mem(17) := X"000000"; -- 176 swap    $t1, $a0, $t0
+            var_insn_mem(18) := X"3B5006"; -- 176 swap    $t1, $a0, $t0
+            var_insn_mem(19) := X"465006"; -- 177 rolb    $t1, $t1, $t0
+            var_insn_mem(20) := X"56500E"; -- 178 xorb    $v0, $t1, $t0
+            var_insn_mem(21) := X"AE5000"; -- 103 move	$t0, $v0
+            var_insn_mem(22) := X"8C5008"; -- 105 bne	$t0, $a1, not_process_record_if_tag_not_valid_t
+            var_insn_mem(23) := X"000000"; -- 176 swap    $t1, $a0, $t0
+            var_insn_mem(24) := X"000000"; -- 176 swap    $t1, $a0, $t0
+            var_insn_mem(25) := X"000000"; -- 176 swap    $t1, $a0, $t0
+            var_insn_mem(26) := X"A06000"; -- 109 li		$t1, 0
+            var_insn_mem(27) := X"A07000"; -- 110 li		$t2, 0
+            var_insn_mem(28) := X"A08000"; -- 111 li		$t3, 0
+            var_insn_mem(29) := X"A09017"; -- 114 li		$t4, CANDT_ID_OFF
+            var_insn_mem(30) := X"CB9006"; -- 115 srlv	$t1, $a0, $t4
+            var_insn_mem(31) := X"A0901C"; -- 116 li		$t4, CANDT_ID_MSK
+            var_insn_mem(32) := X"B69007"; -- 119 li		$t4, DISTR_ID_OFF
+            var_insn_mem(33) := X"C79007"; -- 120 srlv	$t2, $a0, $t4
+            var_insn_mem(34) := X"A09004"; -- 121 li		$t4, DISTR_ID_MSK
+            var_insn_mem(35) := X"C69008"; -- 125 srlv	$t3, $a0, $t4
+            var_insn_mem(36) := X"A09009"; -- 121 li		$t4, DISTR_ID_MSK
+            var_insn_mem(37) := X"BB9006"; -- 119 li		$t4, DISTR_ID_OFF
+            var_insn_mem(38) := X"C69006"; -- 119 li		$t4, DISTR_ID_OFF
+            var_insn_mem(39) := X"A6B000"; -- 129 move	$a0, $t1
+            var_insn_mem(40) := X"A7C000"; -- 130 move	$a1, $t2
+            var_insn_mem(41) := X"A8D000"; -- 131 move	$a2, $t3
+            var_insn_mem(42) := X"E78009"; -- 156 mul		$t4, $t2, $t3 
+            var_insn_mem(43) := X"698009"; -- 156 add		$t3, $t4, $t3 
+            var_insn_mem(44) := X"195000"; -- 158 lw		$t0, vote_count_table($t3)
+            var_insn_mem(45) := X"29B000"; -- 159 sw		$a2, vote_count_table($t3)
+            var_insn_mem(46) := X"DB5006"; -- 161 sub		$t1, $a2, $t0
+            var_insn_mem(47) := X"1C7200"; -- 162 lw		$t2, vote_count_totals($t4)
+            var_insn_mem(48) := X"000000"; -- 176 swap    $t1, $a0, $t0
+            var_insn_mem(49) := X"676007"; -- 163 add		$t2, $t2, $t1
+            var_insn_mem(50) := X"2C7200"; -- 164 sw		$t2, vote_count_totals($t4)
+            var_insn_mem(51) := X"700008"; -- 134 j		process_record_rtn
+
+
+
+
+
+
+
+
+
         
         elsif (rising_edge(clk)) then
             -- read instructions on the rising clock edge
