@@ -152,15 +152,18 @@ update_vote_count_rtn:
 	#	$t2 = uint32_t curr_total
 update_vote_count:
 	# uint32_t prev = vote_count_table[candt_id][distr_id];
-	li		$t3, 2						# $t3 = 2
-	sllv	$t4, $a0, $t3				# $t4 = 4 * candt_id
-	sllv	$t3, $a1, $t3				# $t3 = 4 * distr_id
-	add		$t3, $t4, $t3				# $t3 = offset = (4 * candt_id) + (4 * distr_id)
+	li		$t0, 7						# $t0 = 7
+	sllv	$t4, $a0, $t0				# $t4 = (4 * candt_id) * 32
+	li		$t0, 2						# $t0 = 2
+	sllv	$t3, $a1, $t0				# $t3 = 4 * distr_id
+	add		$t3, $t4, $t3				# $t3 = offset = ((4 * candt_id) * 32) + (4 * distr_id)
 
 	lw		$t0, vote_count_table($t3)	# uint32_t prev = vote_count_table[candt_id][distr_id]
 	sw		$a2, vote_count_table($t3)	# vote_count_table[candt_id][distr_id] = vote_count
 
 	sub		$t1, $a2, $t0				# uint32_t diff = vote_count - prev;
+	li		$t0, 5
+	srlv	$t4, $t4, $t0				
 	lw		$t2, vote_count_totals($t4)	# uint32_t curr_total = vote_count_totals[candt_id]
 	add		$t2, $t2, $t1				# curr_total += diff;
 	sw		$t2, vote_count_totals($t4)	# vote_count_totals[candt_id] = curr_total;
