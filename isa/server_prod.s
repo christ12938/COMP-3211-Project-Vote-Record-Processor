@@ -44,6 +44,7 @@ main_if_send_eq_1:
 	move	$a0, $rec						#   vote_record_t rec = *rec_port;
 	move	$a1, $tag						#   tag_t tag = *tag_port;
 	j		process_record					#   process_record(rec, tag);
+	move	$busy, $zero					#   *busy_port = 0;
 process_record_rtn:
 
 main_if_send_eq_1_f:
