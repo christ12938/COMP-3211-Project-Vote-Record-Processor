@@ -24,7 +24,7 @@ architecture behave of VoteCountSim is
     -- signal r_control_word: std_logic_vector(24 downto 0) := control_word_source;
     signal r_vote_record : std_logic_vector(31 downto 0) := (others => '0');
     signal r_busy: std_logic;
-    
+    signal r_tag: std_logic_vector(7 downto 0);
     
     -- Component declaration for the Unit Under Test (UUT)
     component single_cycle_core is
@@ -45,7 +45,7 @@ architecture behave of VoteCountSim is
             clk     => r_CLOCK,
             start_signal => r_start_signal,
             vote_record => r_vote_record,
-            tag            => X"92",
+            tag            => r_tag,
             busy           => r_busy
         );
        
@@ -62,6 +62,7 @@ architecture behave of VoteCountSim is
             -- initialise reading text file
             variable line_v : line;
             file read_file : text;
+            variable tag_data : std_logic_vector(7 downto 0);
             variable line_data: std_logic_vector(31 downto 0); 
             
         begin
@@ -76,11 +77,14 @@ architecture behave of VoteCountSim is
             file_open(read_file, record_source, read_mode); 
             
             while not endfile(read_file) loop
-                
-                
-                if r_busy = '1' then
-                    wait for 100ns;
-                else
+                    readline(read_file, line_v);
+                    
+                    -- turn txt to usable binary value
+                    read(line_v, tag_data);
+                    
+                    -- send signal to input of processor
+                    r_tag <= tag_data;
+                    
                     readline(read_file, line_v);
                     
                     -- turn txt to usable binary value
@@ -89,13 +93,13 @@ architecture behave of VoteCountSim is
                     -- send signal to input of processor
                     r_vote_record <= line_data;
                     
+                    
+                    
                     -- enable send instruction
                     r_start_signal <= '1';
                     wait until r_busy <= '1';
                     r_start_signal <= '0';
-                   
-                    
-                end if;
+                    wait until r_busy <= '0';
             end loop;
             
             file_close(read_file);  
