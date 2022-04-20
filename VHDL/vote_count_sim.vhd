@@ -45,7 +45,7 @@ architecture behave of VoteCountSim is
             clk     => r_CLOCK,
             start_signal => r_start_signal,
             vote_record => r_vote_record,
-            tag            => X"00",
+            tag            => X"92",
             busy           => r_busy
         );
        

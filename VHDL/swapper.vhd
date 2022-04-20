@@ -44,21 +44,14 @@ architecture Behavioral of swapper is
     signal p1: unsigned(2 downto 0);
     signal p2: unsigned(2 downto 0);
     signal s: unsigned(2 downto 0);
-    signal data : unsigned(31 downto 0);
-    
-    signal block1start: integer := 0;
-    signal block1end: integer := 0;
-    signal block2start: integer := 0;
-    signal block2end: integer := 0;
-    
-    signal block1wrap: integer := 0;
-    signal block2wrap: integer := 0;
-    
-    signal block1: unsigned(7 downto 0);
-    signal block2: unsigned(7 downto 0);
-    signal shift_amount: integer := 0;
-    signal block1mask: unsigned(31 downto 0);
-    signal block2mask: unsigned(31 downto 0);
+    signal record_lc : unsigned(31 downto 0);
+    constant mask : unsigned(31 downto 0) := x"FFFFFFFF";
+    signal pos_1: unsigned(4 downto 0);
+    signal pos_2: unsigned(4 downto 0);
+    signal b1_msk: unsigned(31 downto 0);
+    signal b2_msk: unsigned(31 downto 0);
+    signal b1_bits: unsigned(31 downto 0);
+    signal b2_bits: unsigned(31 downto 0);
 begin
     -- TODO: add wraparound for s bit
     b1 <= unsigned(control_word(1 downto 0));
@@ -66,91 +59,21 @@ begin
     p1 <= unsigned(control_word(6 downto 4));
     p2 <= unsigned(control_word(9 downto 7));
     s  <= unsigned(control_word(12 downto 10));
+    record_lc <= unsigned(vote_record);
     
+    pos_1 <= shift_left(("000" & b1), 3) + p1;
+    pos_2 <= shift_left(("000" & b2), 3) + p2;
+    
+    b1_msk <= shift_left(not(shift_left(mask, to_integer(s))), to_integer(pos_1));
+    b2_msk <= shift_left(not(shift_left(mask, to_integer(s))), to_integer(pos_2));
+        
+    b1_bits <= shift_right((record_lc and b1_msk), to_integer(pos_1));
+    b2_bits <= shift_right((record_lc and b2_msk), to_integer(pos_2));   
+    
+    data_out <= std_logic_vector((((record_lc and not(b2_msk)) or shift_left(b1_bits, to_integer(pos_2))) 
+                 or (((record_lc and not(b2_msk)) or shift_left(b1_bits, to_integer(pos_2))) and not(b1_msk))) 
+                 or shift_left(b2_bits, to_integer(pos_1)));
     -- load vote record
-    data <= unsigned(vote_record);
-
-    block1 <= unsigned(
-        vote_record(
-            ((TO_INTEGER(b1) + 1) * 8 - 1) 
-            downto 
-            (TO_INTEGER(b1)) * 8));
-            
-    block2 <= unsigned(                   
-        vote_record(                      
-            ((TO_INTEGER(b2) + 1) * 8 - 1)
-            downto                        
-            (TO_INTEGER(b2)) * 8));       
-    
-    shift_amount <= TO_INTEGER(p2) - TO_INTEGER(p1) + (TO_INTEGER(b2)- TO_INTEGER(b1)) * 8;
-    
-    block1 <= block1 ror shift_amount;
-    block2 <= block2 rol shift_amount; 
-    
-    block1start <= ((TO_INTEGER(b1) + 1) * 8 - TO_INTEGER(p1) - 1);
-    block2start <= ((TO_INTEGER(b2) + 1) * 8 - TO_INTEGER(p2) - 1);
-    
-    block1wrap  <= (block1start - TO_INTEGER(s) + 1) - (TO_INTEGER(b1) * 8);
-    block2wrap  <= (block2start - TO_INTEGER(s) + 1) - (TO_INTEGER(b2) * 8);
-    
-    block1end   <= block1start - TO_INTEGER(s) + 1
-                    WHEN block1wrap > 0
-                    ELSE TO_INTEGER(b1) * 8;
-                    
-    block2end   <= block2start - TO_INTEGER(s) + 1
-                    WHEN block2wrap > 0
-                    ELSE TO_INTEGER(b1) * 8;
-    
-    
-    -- mask
-    block1mask(block1start downto block1end) <= (others => '1');
-    block2mask(block2start downto block2end) <= (others => '1');
-    
-    -- wrap around
-    block1mask(
-        ((TO_INTEGER(b1) + 1) * 8 - 1) 
-        downto 
-        ((TO_INTEGER(b1) + 1) * 8 + block1wrap)
-    ) <= (others => '1') WHEN block1wrap < 0;
-    
-    block2mask(
-        ((TO_INTEGER(b2) + 1) * 8 - 1) 
-        downto 
-        ((TO_INTEGER(b2) + 1) * 8 + block2wrap)
-    ) <= (others => '1') WHEN block2wrap < 0;
-    
-    -- substitute new blocks in
-    data(
-        ((TO_INTEGER(b1) + 1) * 8 - 1) 
-        downto 
-        (TO_INTEGER(b1) * 8)
-    ) <= data(
-        ((TO_INTEGER(b1) + 1) * 8 - 1) 
-        downto 
-        (TO_INTEGER(b1) * 8)
-    ) or (block1 and block1mask(
-            ((TO_INTEGER(b1) + 1) * 8 - 1) 
-            downto 
-            (TO_INTEGER(b1) * 8 )
-        ));
-    
-    data(
-        ((TO_INTEGER(b2) + 1) * 8 - 1) 
-        downto 
-        (TO_INTEGER(b2) * 8)
-    ) <= data(
-            ((TO_INTEGER(b2) + 1) * 8 - 1) 
-            downto 
-            (TO_INTEGER(b2) * 8)
-        ) or (block2 and block2mask(
-                ((TO_INTEGER(b2) + 1) * 8 - 1) 
-                downto 
-                (TO_INTEGER(b2) * 8 )
-            ));
- 
-    
-    -- assign to data out
-    data_out <= std_logic_vector(data);
     
     
     
