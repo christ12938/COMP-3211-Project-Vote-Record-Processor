@@ -10,7 +10,7 @@ DISTR_ID_MSK   = 0x1F
 CANDT_ID_MSK   = 0x0F
 VOTE_COUNT_MSK = 0x7FFFFF
 
-CTRL_WORD      = 0x1842949
+CTRL_WORD      = 0x1842946
 
 	.data
 vote_count_table:
@@ -164,7 +164,7 @@ update_vote_count:
 	add		$t2, $t2, $t1				# curr_total += diff;
 	sw		$t2, vote_count_totals($t4)	# vote_count_totals[candt_id] = curr_total;
 
-	j		update_vote_count_rtn			# return
+	j		update_vote_count_rtn		# return
 
 	
 	# tag_t compute_tag(vote_record_t rec)
