@@ -105,16 +105,17 @@ begin
         var_insn_mem(36) := X"A6B000"; -- 129 move	$a0, $t1
         var_insn_mem(37) := X"A7C000"; -- 130 move	$a1, $t2
         var_insn_mem(38) := X"A8D000"; -- 131 move	$a2, $t3
-        var_insn_mem(39) := X"E78009"; -- 156 mul		$t4, $t2, $t3 
-        var_insn_mem(40) := X"698009"; -- 156 add		$t3, $t4, $t3 
-        var_insn_mem(41) := X"195000"; -- 158 lw		$t0, vote_count_table($t3)
-        var_insn_mem(42) := X"29B000"; -- 159 sw		$a2, vote_count_table($t3)
-        var_insn_mem(43) := X"DB5006"; -- 161 sub		$t1, $a2, $t0
-        var_insn_mem(44) := X"1C7200"; -- 162 lw		$t2, vote_count_totals($t4)
-        var_insn_mem(45) := X"000000"; -- 176 noop
-        var_insn_mem(46) := X"676007"; -- 163 add		$t2, $t2, $t1
-        var_insn_mem(47) := X"2C7200"; -- 164 sw		$t2, vote_count_totals($t4)
-        var_insn_mem(48) := X"70000A"; -- 134 j		process_record_rtn
+        var_insn_mem(39) := X"A09020"; -- 131 addi 	$9, $0, 32
+        var_insn_mem(40) := X"E79009"; -- 156 mul		$t4, $t2, $t3 
+        var_insn_mem(41) := X"698009"; -- 156 add		$t3, $t4, $t3 
+        var_insn_mem(42) := X"195000"; -- 158 lw		$t0, vote_count_table($t3)
+        var_insn_mem(43) := X"29B000"; -- 159 sw		$a2, vote_count_table($t3)
+        var_insn_mem(44) := X"DB5006"; -- 161 sub		$t1, $a2, $t0
+        var_insn_mem(45) := X"1C7200"; -- 162 lw		$t2, vote_count_totals($t4)
+        var_insn_mem(46) := X"000000"; -- 176 noop
+        var_insn_mem(47) := X"676007"; -- 163 add		$t2, $t2, $t1
+        var_insn_mem(48) := X"2C7200"; -- 164 sw		$t2, vote_count_totals($t4)
+        var_insn_mem(49) := X"70000A"; -- 134 j		process_record_rtn
       
         elsif (rising_edge(clk)) then
             -- read instructions on the rising clock edge
