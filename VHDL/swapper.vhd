@@ -45,6 +45,18 @@ architecture Behavioral of swapper is
     signal s: unsigned(2 downto 0);
     signal data : unsigned(31 downto 0);
     
+    signal block1start: integer;
+    signal block1end: integer;
+    signal block2start: integer;
+    signal block2end: integer;
+    
+    signal block1wrap: integer;
+    signal block2wrap: integer;
+    
+    signal block1: unsigned(7 downto 0);
+    signal block2: unsigned(7 downto 0);
+    signal shift_amount: integer;
+      
 begin
     -- TODO: add wraparound for s bit
     b1 <= unsigned(control_word(1 downto 0));
@@ -56,13 +68,68 @@ begin
     -- load vote record
     data <= unsigned(vote_record);
     
+    block1 <= unsigned(
+        vote_record(
+            ((TO_INTEGER(b1) + 1) * 8 + 1) 
+            downto 
+            (TO_INTEGER(b1)) * 8));
+            
+    block2 <= unsigned(                   
+        vote_record(                      
+            ((TO_INTEGER(b2) + 1) * 8 + 1)
+            downto                        
+            (TO_INTEGER(b2)) * 8));       
+    
+    shift_amount <= TO_INTEGER(p2) - TO_INTEGER(p1);
+    
+    block1 <= block1 ror shift_amount;
+    block2 <= block2 rol shift_amount; 
+    
+    -- mask
+    
+                   
+    
+    
+    
+    
+    
+    
+    
+    
+    block1start <= ((TO_INTEGER(b1) + 1) * 8 - TO_INTEGER(p1) - 1);
+    block1wrap  <= (block1start - TO_INTEGER(s) + 1) - (TO_INTEGER(b1) * 8);
+    block1end   <= block1start - TO_INTEGER(s) + 1
+                    WHEN block1wrap > 0
+                    ELSE TO_INTEGER(b1) * 8;
+    
+    block2start <= ((TO_INTEGER(b2) + 1) * 8 - TO_INTEGER(p2) - 1);
+    block2wrap  <= (block2start - TO_INTEGER(s) + 1) - (TO_INTEGER(b2) * 8);
+    block2end   <= block2start - TO_INTEGER(s) + 1
+                    WHEN block2wrap > 0
+                    ELSE TO_INTEGER(b1) * 8;
+    
     -- load part 2 (b2, p2) into position of part 1
-    data((TO_INTEGER(b1) * 8 + TO_INTEGER(p1)) downto (TO_INTEGER(b1) * 8 + TO_INTEGER(p1) - TO_INTEGER(s) + 1)) <= unsigned(vote_record((TO_INTEGER(b2) * 8 + TO_INTEGER(p2)) downto (TO_INTEGER(b2) * 8 + TO_INTEGER(p2) - TO_INTEGER(s) + 1)));
+    data(block1start downto block1end) 
+        <= unsigned(vote_record(block2start downto block2end));
+    
     -- load part 1 (b1, p1) into position of part 2
-    data((TO_INTEGER(b2) * 8 + TO_INTEGER(p2)) downto (TO_INTEGER(b2) * 8 + TO_INTEGER(p2) - TO_INTEGER(s) + 1)) <= unsigned(vote_record((TO_INTEGER(b1) * 8 + TO_INTEGER(p1)) downto (TO_INTEGER(b1) * 8 + TO_INTEGER(p1) - TO_INTEGER(s) + 1)));
+    data(block2start downto block2end) 
+        <= unsigned(vote_record(block1start downto block1end));
+    
+    -- wrap around
+    data((TO_INTEGER(b2) + 1) * 8 downto (TO_INTEGER(b2) + 1) * 8 + block2wrap) 
+        <= unsigned(vote_record((TO_INTEGER(b1) + 1) * 8 downto (TO_INTEGER(b1) + 1) * 8 + block1wrap));
+         
+    
+    -- (TO_INTEGER(b1) * 8 + TO_INTEGER(p1) - TO_INTEGER(s) + 1)
+    -- <
+    -- TO_INTEGER(b1) * 8
     
     -- assign to data out
     data_out <= std_logic_vector(data);
+    
+    
+    
 
 end Behavioral;
  
